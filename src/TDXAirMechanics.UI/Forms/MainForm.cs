@@ -1,0 +1,232 @@
+using Microsoft.Extensions.Logging;
+using TDXAirMechanics.Core.Interfaces;
+using TDXAirMechanics.UI.Services;
+
+namespace TDXAirMechanics.UI.Forms;
+
+/// <summary>
+/// Main application form for TDX Air Mechanics
+/// </summary>
+public partial class MainForm : Form
+{
+    private readonly ILogger<MainForm> _logger;
+    private readonly IApplicationService _applicationService;
+    private readonly IStatusService _statusService;
+    private readonly System.Windows.Forms.Timer _updateTimer;
+    private NotifyIcon? _notifyIcon;    public MainForm(
+        ILogger<MainForm> logger,
+        IApplicationService applicationService,
+        IStatusService statusService)
+    {
+        _logger = logger;
+        _applicationService = applicationService;
+        _statusService = statusService;
+        
+        InitializeComponent();
+        InitializeUI();
+
+        // Setup update timer
+        _updateTimer = new System.Windows.Forms.Timer();
+        _updateTimer.Interval = 100; // 10 Hz update rate
+        _updateTimer.Tick += UpdateTimer_Tick;
+        _updateTimer.Start();
+
+        // Subscribe to status changes
+        _statusService.StatusChanged += OnStatusChanged;
+    }
+
+    private void InitializeUI()
+    {
+        _logger.LogInformation("Initializing main form UI");
+
+        // Setup system tray icon
+        SetupSystemTray();
+
+        // Setup UI event handlers
+        SetupEventHandlers();
+
+        // Handle form closing to minimize to tray instead
+        this.FormClosing += MainForm_FormClosing;
+        this.WindowState = FormWindowState.Normal;
+        this.ShowInTaskbar = true;
+    }
+
+    private void SetupEventHandlers()
+    {
+        // Force settings events
+        forceMultiplierTrackBar.ValueChanged += ForceMultiplierTrackBar_ValueChanged;
+        enableForceFeedbackCheckBox.CheckedChanged += EnableForceFeedbackCheckBox_CheckedChanged;
+
+        // Device management events
+        refreshDevicesButton.Click += RefreshDevicesButton_Click;
+        selectDeviceButton.Click += SelectDeviceButton_Click;
+    }
+
+    private void SetupSystemTray()
+    {
+        _notifyIcon = new NotifyIcon();
+        _notifyIcon.Icon = this.Icon ?? SystemIcons.Application;
+        _notifyIcon.Text = "TDX Air Mechanics";
+        _notifyIcon.Visible = false;
+
+        // Create context menu for system tray
+        var contextMenu = new ContextMenuStrip();
+        contextMenu.Items.Add("Show", null, (s, e) => ShowMainWindow());
+        contextMenu.Items.Add("Exit", null, (s, e) => ExitApplication());
+        _notifyIcon.ContextMenuStrip = contextMenu;
+
+        // Double-click to show window
+        _notifyIcon.DoubleClick += (s, e) => ShowMainWindow();
+    }
+
+    private void ShowMainWindow()
+    {
+        this.Show();
+        this.WindowState = FormWindowState.Normal;
+        this.BringToFront();
+        this.Activate();
+        _notifyIcon!.Visible = false;
+    }
+
+    private void ExitApplication()
+    {
+        _notifyIcon?.Dispose();
+        Application.Exit();
+    }
+
+    private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+        // Minimize to tray instead of closing
+        if (e.CloseReason == CloseReason.UserClosing)
+        {
+            e.Cancel = true;
+            this.Hide();
+            _notifyIcon!.Visible = true;
+            _notifyIcon.ShowBalloonTip(2000, "TDX Air Mechanics", 
+                "Application minimized to system tray", ToolTipIcon.Info);
+        }
+    }
+
+    private void UpdateTimer_Tick(object? sender, EventArgs e)
+    {
+        // Update UI with current status
+        UpdateStatusDisplay();
+    }    private void UpdateStatusDisplay()
+    {
+        // Update connection status
+        var isSimConnected = _applicationService.IsSimConnectConnected;
+        var isJoystickConnected = _applicationService.IsJoystickConnected;
+
+        msfsStatusLabel.Text = $"MSFS: {(isSimConnected ? "Connected" : "Disconnected")}";
+        joystickStatusLabel.Text = $"Joystick: {(isJoystickConnected ? "Connected" : "Not Selected")}";
+
+        // Update flight data if available
+        var flightData = _applicationService.CurrentFlightData;
+        if (flightData != null)
+        {
+            airspeedLabel.Text = $"Airspeed: {flightData.AirspeedKnots:F0} kts";
+            altitudeLabel.Text = $"Altitude: {flightData.AltitudeFeet:F0} ft";
+            headingLabel.Text = $"Heading: {flightData.HeadingDegrees:F0}°";
+        }
+
+        // Update force display
+        var currentForces = _applicationService.CurrentForces;
+        if (currentForces != null)
+        {
+            forceXProgressBar.Value = (int)(currentForces.ForceX * 100);
+            forceYProgressBar.Value = (int)(currentForces.ForceY * 100);
+        }
+    }    private void ForceMultiplierTrackBar_ValueChanged(object? sender, EventArgs e)
+    {
+        var value = forceMultiplierTrackBar.Value;
+        forceMultiplierLabel.Text = $"Force Multiplier: {value}%";
+        _applicationService.SetForceMultiplier(value);
+    }
+
+    private void EnableForceFeedbackCheckBox_CheckedChanged(object? sender, EventArgs e)
+    {
+        var enabled = enableForceFeedbackCheckBox.Checked;
+        _applicationService.SetForceFeedbackEnabled(enabled);
+        _logger.LogInformation("Force feedback {Status}", enabled ? "enabled" : "disabled");
+    }    private async void RefreshDevicesButton_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            refreshDevicesButton.Enabled = false;
+            joystickListBox.Items.Clear();
+
+            var devices = await _applicationService.GetAvailableDevicesAsync();
+            foreach (var device in devices)
+            {
+                joystickListBox.Items.Add(device);
+            }
+
+            if (devices.Count == 0)
+            {
+                joystickListBox.Items.Add("No devices found");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error refreshing device list");
+            MessageBox.Show($"Error refreshing devices: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            refreshDevicesButton.Enabled = true;
+        }
+    }
+
+    private async void SelectDeviceButton_Click(object? sender, EventArgs e)
+    {
+        if (joystickListBox.SelectedItem == null)
+        {
+            MessageBox.Show("Please select a device first.", "No Device Selected", 
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        try
+        {
+            selectDeviceButton.Enabled = false;
+            var deviceName = joystickListBox.SelectedItem.ToString();
+            if (!string.IsNullOrEmpty(deviceName))
+            {
+                await _applicationService.SelectDeviceAsync(deviceName);
+                MessageBox.Show($"Selected device: {deviceName}", "Device Selected", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error selecting device");
+            MessageBox.Show($"Error selecting device: {ex.Message}", "Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            selectDeviceButton.Enabled = true;
+        }
+    }
+
+    private void OnStatusChanged(object? sender, StatusChangedEventArgs e)
+    {
+        // Handle status changes from the application service
+        Invoke(() =>
+        {
+            _logger.LogDebug("Status changed: {Status}", e.Message);
+            // Update UI based on status change
+        });
+    }    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _updateTimer?.Dispose();
+            _notifyIcon?.Dispose();
+            _statusService.StatusChanged -= OnStatusChanged;
+            components?.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+}
