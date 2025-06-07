@@ -377,9 +377,16 @@ namespace TDXAirMechanics.UI.Forms
             this.ClientSize = new Size(900, 700);
             this.Controls.Add(this.mainTabControl);
             this.MinimumSize = new Size(600, 400);
-            this.Name = "MainForm";
-            this.StartPosition = FormStartPosition.CenterScreen;
+            this.Name = "MainForm";            this.StartPosition = FormStartPosition.CenterScreen;
             this.Text = "TDX Air Mechanics";
+            try 
+            {
+                this.Icon = new Icon(System.IO.Path.Combine(Application.StartupPath, "Resources", "app_icon.ico"));
+            }
+            catch (System.Exception)
+            {
+                // Icon loading failed - application will use default icon
+            }
             this.mainTabControl.ResumeLayout(false);
             this.statusTabPage.ResumeLayout(false);
             this.settingsTabPage.ResumeLayout(false);

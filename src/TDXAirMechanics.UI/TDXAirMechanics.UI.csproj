@@ -6,9 +6,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>    <Platforms>AnyCPU;x64</Platforms>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <!-- <ApplicationIcon>Resources\TDXAirMechanics.ico</ApplicationIcon> -->
+    <Nullable>enable</Nullable>    <Platforms>AnyCPU;x64</Platforms>    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <AssemblyTitle>TDX Air Mechanics</AssemblyTitle>
     <AssemblyDescription>Flight simulator force feedback application for Microsoft Flight Simulator</AssemblyDescription>
