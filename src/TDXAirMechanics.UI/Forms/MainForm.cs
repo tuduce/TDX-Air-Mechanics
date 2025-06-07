@@ -63,6 +63,9 @@ public partial class MainForm : Form
         // General settings events
         closeToTrayCheckBox.CheckedChanged += CloseToTrayCheckBox_CheckedChanged;
 
+        // Tab control events
+        mainTabControl.SelectedIndexChanged += MainTabControl_SelectedIndexChanged;
+
         // Device management events
         refreshDevicesButton.Click += RefreshDevicesButton_Click;
         selectDeviceButton.Click += SelectDeviceButton_Click;
@@ -202,12 +205,35 @@ public partial class MainForm : Form
         {
             _logger.LogError(ex, "Failed to save close to tray setting");
             // Revert the checkbox state if save failed
-            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
+            closeToTrayCheckBox.Checked = _closeToTrayOnExit;        }
+    }
+
+    private async void MainTabControl_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        // Check if the devices tab was selected (assuming it's at index 2: Status, Settings, Devices)
+        if (mainTabControl.SelectedIndex == 2) // Devices tab
+        {
+            await RefreshDevicesIfNeeded();
         }
-    }private async void RefreshDevicesButton_Click(object? sender, EventArgs e)
+    }    private async Task RefreshDevicesIfNeeded()
+    {
+        // Only refresh if the list is empty or contains the "No devices found" message
+        if (joystickListBox.Items.Count == 0 || 
+            (joystickListBox.Items.Count == 1 && joystickListBox.Items[0].ToString() == "No devices found"))
+        {
+            _logger.LogInformation("Auto-refreshing device list on devices tab activation");
+            
+            // Show a subtle indication that auto-refresh is happening
+            joystickListBox.Items.Clear();
+            joystickListBox.Items.Add("Scanning for devices...");
+            
+            await RefreshDevices(showErrorDialog: false);
+        }
+    }private async Task RefreshDevices(bool showErrorDialog = false)
     {
         try
         {
+            var wasEnabled = refreshDevicesButton.Enabled;
             refreshDevicesButton.Enabled = false;
             joystickListBox.Items.Clear();
 
@@ -225,13 +251,20 @@ public partial class MainForm : Form
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error refreshing device list");
-            MessageBox.Show($"Error refreshing devices: {ex.Message}", "Error", 
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            // Only show message box if requested (manual refresh)
+            if (showErrorDialog)
+            {
+                MessageBox.Show($"Error refreshing devices: {ex.Message}", "Error", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
         finally
         {
             refreshDevicesButton.Enabled = true;
         }
+    }    private async void RefreshDevicesButton_Click(object? sender, EventArgs e)
+    {
+        await RefreshDevices(showErrorDialog: true);
     }
 
     private async void SelectDeviceButton_Click(object? sender, EventArgs e)
