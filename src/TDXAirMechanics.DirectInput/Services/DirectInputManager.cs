@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using SharpDX.DirectInput;
+using System.Runtime.InteropServices;
 using TDXAirMechanics.Core.Interfaces;
 using TDXAirMechanics.Core.Models;
 
@@ -22,6 +23,10 @@ public class DirectInputManager : IDirectInputManager
     private const int DI_FORCE_CENTER = 0;
     private const float SAFETY_LIMIT = 0.85f; // 85% of max force for safety
 
+    // Windows API import for desktop window handle
+    [DllImport("user32.dll", SetLastError = false)]
+    private static extern IntPtr GetDesktopWindow();
+
     public DirectInputManager(ILogger<DirectInputManager> logger)
     {
         _logger = logger;
@@ -41,7 +46,7 @@ public class DirectInputManager : IDirectInputManager
                 _directInput = new SharpDX.DirectInput.DirectInput();
             });
             
-            // Find force-feedback capable joysticks
+            // Find force-feedback capable joysticks but don't auto-select during initialization
             var joystickGuid = await FindForceFeedbackJoystickAsync();
             if (joystickGuid == Guid.Empty)
             {
@@ -49,14 +54,15 @@ public class DirectInputManager : IDirectInputManager
                 return false;
             }
             
-            return await SelectDeviceAsync(joystickGuid);
+            _logger.LogInformation("DirectInput initialized successfully - devices available for manual selection");
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to initialize DirectInput");
             return false;
         }
-    }    public async Task<bool> ApplyForceAsync(ForceFeedbackData forceData)
+    }public async Task<bool> ApplyForceAsync(ForceFeedbackData forceData)
     {
         if (_joystick == null || !IsJoystickConnected)
         {
@@ -140,7 +146,7 @@ public class DirectInputManager : IDirectInputManager
         }
 
         return devices;
-    }    public async Task<bool> SelectDeviceAsync(Guid deviceGuid)
+    }    public async Task<bool> SelectDeviceAsync(Guid deviceGuid, IntPtr windowHandle = default)
     {
         try
         {
@@ -154,7 +160,10 @@ public class DirectInputManager : IDirectInputManager
                 if (_directInput == null) return;
 
                 _joystick = new Joystick(_directInput, deviceGuid);
-                _joystick.SetCooperativeLevel(IntPtr.Zero, 
+                
+                // Use the provided window handle, or fallback to desktop window handle
+                var hwnd = windowHandle != IntPtr.Zero ? windowHandle : GetDesktopWindow();
+                _joystick.SetCooperativeLevel(hwnd, 
                     CooperativeLevel.Background | CooperativeLevel.Exclusive);
 
                 // Get device information

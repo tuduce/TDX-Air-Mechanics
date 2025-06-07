@@ -191,15 +191,13 @@ public partial class MainForm : Form
             MessageBox.Show("Please select a device first.", "No Device Selected", 
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
-        }
-
-        try
+        }        try
         {
             selectDeviceButton.Enabled = false;
             var deviceName = joystickListBox.SelectedItem.ToString();
             if (!string.IsNullOrEmpty(deviceName))
             {
-                await _applicationService.SelectDeviceAsync(deviceName);
+                await _applicationService.SelectDeviceAsync(deviceName, this.Handle);
                 MessageBox.Show($"Selected device: {deviceName}", "Device Selected", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }

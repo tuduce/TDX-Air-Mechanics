@@ -63,6 +63,13 @@ public interface IApplicationService
     Task SelectDeviceAsync(string deviceName);
 
     /// <summary>
+    /// Select a joystick device for force feedback with window handle
+    /// </summary>
+    /// <param name="deviceName">Name of the device to select</param>
+    /// <param name="windowHandle">Window handle for DirectInput cooperative level</param>
+    Task SelectDeviceAsync(string deviceName, IntPtr windowHandle);
+
+    /// <summary>
     /// Manually connect to the flight simulator
     /// </summary>
     /// <returns>True if connection was successful</returns>

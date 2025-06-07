@@ -44,14 +44,13 @@ public interface IDirectInputManager : IDisposable
     /// List all available force feedback devices
     /// </summary>
     /// <returns>List of available devices</returns>
-    Task<List<JoystickInfo>> GetAvailableDevicesAsync();
-
-    /// <summary>
+    Task<List<JoystickInfo>> GetAvailableDevicesAsync();    /// <summary>
     /// Select a specific joystick by GUID
     /// </summary>
     /// <param name="deviceGuid">Device GUID</param>
+    /// <param name="windowHandle">Window handle for cooperative level (optional, uses desktop if null)</param>
     /// <returns>True if selection was successful</returns>
-    Task<bool> SelectDeviceAsync(Guid deviceGuid);
+    Task<bool> SelectDeviceAsync(Guid deviceGuid, IntPtr windowHandle = default);
 }
 
 /// <summary>

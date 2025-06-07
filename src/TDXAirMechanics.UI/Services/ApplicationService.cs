@@ -193,6 +193,11 @@ public class ApplicationService : IApplicationService
         return new List<string> { "DirectInput manager not available" };
     }    public async Task SelectDeviceAsync(string deviceName)
     {
+        await SelectDeviceAsync(deviceName, IntPtr.Zero);
+    }
+
+    public async Task SelectDeviceAsync(string deviceName, IntPtr windowHandle)
+    {
         _logger.LogInformation("Selecting joystick device: {DeviceName}", deviceName);
         
         if (_directInputManager != null)
@@ -203,7 +208,7 @@ public class ApplicationService : IApplicationService
                 var device = devices.FirstOrDefault(d => d.Name == deviceName);
                 if (device != null)
                 {
-                    await _directInputManager.SelectDeviceAsync(device.DeviceGuid);
+                    await _directInputManager.SelectDeviceAsync(device.DeviceGuid, windowHandle);
                     OnStatusChanged($"Selected device: {deviceName}", StatusLevel.Success);
                 }
                 else
@@ -216,7 +221,8 @@ public class ApplicationService : IApplicationService
                 _logger.LogError(ex, "Failed to select device");
                 OnStatusChanged($"Failed to select device: {ex.Message}", StatusLevel.Error);
             }
-        }    }
+        }
+    }
 
     public async Task<bool> ConnectToSimulatorAsync()
     {
