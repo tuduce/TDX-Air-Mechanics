@@ -63,11 +63,12 @@ public class ApplicationService : IApplicationService
             var appConfig = await _configurationManager.LoadConfigurationAsync();
             _forceConfig = appConfig.ForceSettings ?? new ForceConfiguration();
             
-            // Initialize SimConnect if available
+            // Initialize SimConnect but don't auto-connect
             if (_simConnectManager != null)
             {
-                await _simConnectManager.InitializeAsync();
-                await _simConnectManager.StartAsync();
+                // Only initialize without connecting - user can connect manually
+                _logger.LogInformation("SimConnect manager available - waiting for manual connection");
+                OnStatusChanged("SimConnect ready - use Connect button when simulator is running", StatusLevel.Information);
             }
 
             // Initialize DirectInput if available
@@ -215,6 +216,61 @@ public class ApplicationService : IApplicationService
                 _logger.LogError(ex, "Failed to select device");
                 OnStatusChanged($"Failed to select device: {ex.Message}", StatusLevel.Error);
             }
+        }    }
+
+    public async Task<bool> ConnectToSimulatorAsync()
+    {
+        _logger.LogInformation("Attempting manual connection to flight simulator");
+        
+        if (_simConnectManager == null)
+        {
+            _logger.LogWarning("SimConnect manager not available");
+            OnStatusChanged("SimConnect manager not available", StatusLevel.Warning);
+            return false;
+        }
+
+        try
+        {
+            var success = await _simConnectManager.ConnectAsync();
+            if (success)
+            {
+                await _simConnectManager.StartAsync();
+                OnStatusChanged("Connected to flight simulator", StatusLevel.Success);
+                return true;
+            }
+            else
+            {
+                OnStatusChanged("Failed to connect to flight simulator", StatusLevel.Warning);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during manual SimConnect connection");
+            OnStatusChanged($"Connection failed: {ex.Message}", StatusLevel.Error);
+            return false;
+        }
+    }
+
+    public async Task DisconnectFromSimulatorAsync()
+    {
+        _logger.LogInformation("Manually disconnecting from flight simulator");
+        
+        if (_simConnectManager == null)
+        {
+            _logger.LogWarning("SimConnect manager not available");
+            return;
+        }
+
+        try
+        {
+            await _simConnectManager.DisconnectAsync();
+            OnStatusChanged("Disconnected from flight simulator", StatusLevel.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during manual SimConnect disconnection");
+            OnStatusChanged($"Disconnection failed: {ex.Message}", StatusLevel.Error);
         }
     }
 

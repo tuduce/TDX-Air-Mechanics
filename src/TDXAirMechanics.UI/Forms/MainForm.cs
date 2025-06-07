@@ -120,6 +120,12 @@ public partial class MainForm : Form
         msfsStatusLabel.Text = $"MSFS: {(isSimConnected ? "Connected" : "Disconnected")}";
         joystickStatusLabel.Text = $"Joystick: {(isJoystickConnected ? "Connected" : "Not Selected")}";
 
+        // Update connection button states
+        connectButton.Enabled = !isSimConnected;
+        connectButton.Text = "Connect";
+        disconnectButton.Enabled = isSimConnected;
+        disconnectButton.Text = "Disconnect";
+
         // Update flight data if available
         var flightData = _applicationService.CurrentFlightData;
         if (flightData != null)
@@ -127,16 +133,16 @@ public partial class MainForm : Form
             airspeedLabel.Text = $"Airspeed: {flightData.AirspeedKnots:F0} kts";
             altitudeLabel.Text = $"Altitude: {flightData.AltitudeFeet:F0} ft";
             headingLabel.Text = $"Heading: {flightData.HeadingDegrees:F0}°";
-        }
-
-        // Update force display
+        }        // Update force display
         var currentForces = _applicationService.CurrentForces;
         if (currentForces != null)
         {
-            forceXProgressBar.Value = (int)(currentForces.ForceX * 100);
-            forceYProgressBar.Value = (int)(currentForces.ForceY * 100);
+            // Convert force values from -1.0/+1.0 range to 0-200 ProgressBar range
+            // -1.0 maps to 0, 0.0 maps to 100, +1.0 maps to 200
+            forceXProgressBar.Value = (int)((currentForces.ForceX + 1.0) * 100);
+            forceYProgressBar.Value = (int)((currentForces.ForceY + 1.0) * 100);
         }
-    }    private void ForceMultiplierTrackBar_ValueChanged(object? sender, EventArgs e)
+    }private void ForceMultiplierTrackBar_ValueChanged(object? sender, EventArgs e)
     {
         var value = forceMultiplierTrackBar.Value;
         forceMultiplierLabel.Text = $"Force Multiplier: {value}%";
@@ -207,6 +213,68 @@ public partial class MainForm : Form
         finally
         {
             selectDeviceButton.Enabled = true;
+        }    }
+
+    private async void ConnectButton_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            connectButton.Enabled = false;
+            connectButton.Text = "Connecting...";
+            
+            _logger.LogInformation("User requested SimConnect connection");
+            var success = await _applicationService.ConnectToSimulatorAsync();
+            
+            if (success)
+            {
+                connectButton.Enabled = false;
+                disconnectButton.Enabled = true;
+                MessageBox.Show("Connected to flight simulator successfully!", "Connection Successful", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                connectButton.Enabled = true;
+                connectButton.Text = "Connect";
+                MessageBox.Show("Failed to connect to flight simulator. Please ensure MSFS is running and try again.", 
+                    "Connection Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during manual SimConnect connection");
+            connectButton.Enabled = true;
+            connectButton.Text = "Connect";
+            MessageBox.Show($"Error connecting to simulator: {ex.Message}", "Connection Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void DisconnectButton_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            disconnectButton.Enabled = false;
+            disconnectButton.Text = "Disconnecting...";
+            
+            _logger.LogInformation("User requested SimConnect disconnection");
+            await _applicationService.DisconnectFromSimulatorAsync();
+            
+            connectButton.Enabled = true;
+            connectButton.Text = "Connect";
+            disconnectButton.Enabled = false;
+            disconnectButton.Text = "Disconnect";
+            
+            MessageBox.Show("Disconnected from flight simulator.", "Disconnected", 
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during SimConnect disconnection");
+            disconnectButton.Enabled = true;
+            disconnectButton.Text = "Disconnect";
+            MessageBox.Show($"Error disconnecting from simulator: {ex.Message}", "Disconnection Error", 
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 

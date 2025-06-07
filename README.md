@@ -69,17 +69,36 @@ dotnet run --project src/TDXAirMechanics.UI
 ## Usage
 
 1. **Start the Application**: Launch TDXAirMechanics.UI.exe
-2. **Connect Force Feedback Device**: 
+2. **Connect to Flight Simulator**:
+   - Start MSFS 2024 first
+   - In the application's "Status" tab, click "Connect" button
+   - If connection fails, wait for simulator to fully load and try again
+   - You can manually disconnect/reconnect as needed
+3. **Connect Force Feedback Device**: 
    - Go to the "Devices" tab
    - Click "Refresh Devices"
    - Select your force feedback joystick
    - Click "Select Device"
-3. **Configure Force Settings**:
+4. **Configure Force Settings**:
    - Adjust force multiplier (0-200%)
    - Enable/disable force feedback
    - Modify settings for your preference
-4. **Start Flight Simulator**: Launch MSFS and load any aircraft
-5. **Monitor Status**: Check the "Status" tab for connection status
+5. **Monitor Status**: Check the "Status" tab for real-time connection and flight data
+
+### Connection Management
+
+The application provides manual connection control:
+
+- **Auto-Start**: Application starts without automatically connecting to MSFS
+- **Manual Connect**: Use the "Connect" button when flight simulator is running
+- **Graceful Handling**: If MSFS exits, use "Connect" button to reconnect when restarted
+- **Status Monitoring**: Real-time display of connection status and flight data
+
+### Flight Simulator Compatibility
+
+- **MSFS 2024**: Full integration with latest SDK
+- **SimConnect Events**: Real-time flight data and aircraft status
+- **Conditional Building**: Compiles without MSFS SDK for development/testing
 
 ### Force Settings
 

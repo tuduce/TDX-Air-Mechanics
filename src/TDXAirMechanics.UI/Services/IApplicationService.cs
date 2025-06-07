@@ -56,13 +56,22 @@ public interface IApplicationService
     /// Get available joystick devices
     /// </summary>
     /// <returns>List of available device names</returns>
-    Task<List<string>> GetAvailableDevicesAsync();
-
-    /// <summary>
+    Task<List<string>> GetAvailableDevicesAsync();    /// <summary>
     /// Select a joystick device for force feedback
     /// </summary>
     /// <param name="deviceName">Name of the device to select</param>
     Task SelectDeviceAsync(string deviceName);
+
+    /// <summary>
+    /// Manually connect to the flight simulator
+    /// </summary>
+    /// <returns>True if connection was successful</returns>
+    Task<bool> ConnectToSimulatorAsync();
+
+    /// <summary>
+    /// Manually disconnect from the flight simulator
+    /// </summary>
+    Task DisconnectFromSimulatorAsync();
 
     /// <summary>
     /// Event fired when the application status changes

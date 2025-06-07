@@ -20,8 +20,10 @@
 - [x] **IConfigurationManager**: Interface for configuration persistence
 
 ### SimConnect Integration
-- [x] **SimConnectManager**: Async implementation with connection management and data structure definitions
+- [x] **SimConnectManager**: Complete async implementation with connection management and data structure definitions
 - [x] **MSFS 2024 SDK Integration**: Properly referenced SDK at "C:\MSFS 2024 SDK\SimConnect SDK\"
+- [x] **Manual Connection Controls**: Connect/Disconnect buttons in UI for user-controlled connection
+- [x] **Graceful Connection Handling**: Robust error handling for simulator not running scenarios
 - [x] **Conditional Compilation**: Complete conditional compilation support with simulation mode
 - [x] **Event-driven Architecture**: Flight data events and connection status updates
 - [x] **Data Mapping**: Complete SimConnect data structure mapping to FlightData model
@@ -41,12 +43,14 @@
 - [x] **Aircraft Profiles**: Support for aircraft-specific force characteristics
 
 ### User Interface
-- [x] **Modern Windows Forms UI**: Complete tabbed interface
+- [x] **Modern Windows Forms UI**: Complete tabbed interface with connection controls
+- [x] **Manual Connection Management**: Connect/Disconnect buttons for user-controlled SimConnect connection
 - [x] **Status Monitoring**: Real-time connection and flight data display
 - [x] **Force Visualization**: Progress bars showing current force output
 - [x] **Settings Control**: Force multiplier, enable/disable controls
 - [x] **Device Management**: Device selection and configuration
 - [x] **System Tray Integration**: Minimize to tray with context menu
+- [x] **Graceful UX**: Intuitive feedback for connection states and errors
 
 ### Application Services
 - [x] **ApplicationService**: Main service orchestrating all components
@@ -81,8 +85,11 @@
 ### Ready for Real-World Integration
 - All compilation errors resolved - solution builds successfully
 - SimConnect SDK properly integrated with MSFS 2024 SDK
+- Manual connection controls provide user-friendly simulator integration
+- Graceful handling when simulator is not running - no automatic connection attempts
 - Conditional compilation allows testing without flight simulator
 - Event pipeline ready for actual data from MSFS and force feedback hardware
+- User can connect/disconnect at will based on simulator availability
 
 ## 🔧 Current State
 

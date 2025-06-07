@@ -23,10 +23,11 @@ namespace TDXAirMechanics.UI.Forms
             this.statusTabPage = new TabPage();
             this.settingsTabPage = new TabPage();
             this.devicesTabPage = new TabPage();
-            this.statusPanel = new Panel();
-            this.connectionStatusGroup = new GroupBox();
+            this.statusPanel = new Panel();            this.connectionStatusGroup = new GroupBox();
             this.msfsStatusLabel = new Label();
             this.joystickStatusLabel = new Label();
+            this.connectButton = new Button();
+            this.disconnectButton = new Button();
             this.forcePanel = new Panel();
             this.forceDisplayGroup = new GroupBox();
             this.forceXProgressBar = new ProgressBar();
@@ -118,9 +119,10 @@ namespace TDXAirMechanics.UI.Forms
             this.statusPanel.Name = "statusPanel";
             this.statusPanel.Size = new Size(886, 200);
             this.statusPanel.TabIndex = 0;
+            //            // connectionStatusGroup
             // 
-            // connectionStatusGroup
-            // 
+            this.connectionStatusGroup.Controls.Add(this.disconnectButton);
+            this.connectionStatusGroup.Controls.Add(this.connectButton);
             this.connectionStatusGroup.Controls.Add(this.joystickStatusLabel);
             this.connectionStatusGroup.Controls.Add(this.msfsStatusLabel);
             this.connectionStatusGroup.Dock = DockStyle.Left;
@@ -141,13 +143,33 @@ namespace TDXAirMechanics.UI.Forms
             this.msfsStatusLabel.Text = "MSFS: Disconnected";
             // 
             // joystickStatusLabel
-            // 
-            this.joystickStatusLabel.AutoSize = true;
+            //            this.joystickStatusLabel.AutoSize = true;
             this.joystickStatusLabel.Location = new Point(20, 70);
             this.joystickStatusLabel.Name = "joystickStatusLabel";
             this.joystickStatusLabel.Size = new Size(160, 20);
             this.joystickStatusLabel.TabIndex = 1;
             this.joystickStatusLabel.Text = "Joystick: Not Selected";
+            // 
+            // connectButton
+            // 
+            this.connectButton.Location = new Point(20, 120);
+            this.connectButton.Name = "connectButton";
+            this.connectButton.Size = new Size(100, 30);
+            this.connectButton.TabIndex = 2;
+            this.connectButton.Text = "Connect";
+            this.connectButton.UseVisualStyleBackColor = true;
+            this.connectButton.Click += new EventHandler(this.ConnectButton_Click);
+            // 
+            // disconnectButton
+            // 
+            this.disconnectButton.Location = new Point(130, 120);
+            this.disconnectButton.Name = "disconnectButton";
+            this.disconnectButton.Size = new Size(100, 30);
+            this.disconnectButton.TabIndex = 3;
+            this.disconnectButton.Text = "Disconnect";
+            this.disconnectButton.UseVisualStyleBackColor = true;
+            this.disconnectButton.Enabled = false;
+            this.disconnectButton.Click += new EventHandler(this.DisconnectButton_Click);
             // 
             // forcePanel
             // 
@@ -171,21 +193,19 @@ namespace TDXAirMechanics.UI.Forms
             this.forceDisplayGroup.TabIndex = 0;
             this.forceDisplayGroup.TabStop = false;
             this.forceDisplayGroup.Text = "Force Feedback";
-            // 
-            // forceXProgressBar
+            //            // forceXProgressBar
             // 
             this.forceXProgressBar.Location = new Point(100, 50);
-            this.forceXProgressBar.Maximum = 100;
-            this.forceXProgressBar.Minimum = -100;
+            this.forceXProgressBar.Maximum = 200;
+            this.forceXProgressBar.Minimum = 0;
             this.forceXProgressBar.Name = "forceXProgressBar";
             this.forceXProgressBar.Size = new Size(400, 30);
             this.forceXProgressBar.TabIndex = 0;
-            // 
-            // forceYProgressBar
+            //            // forceYProgressBar
             // 
             this.forceYProgressBar.Location = new Point(100, 100);
-            this.forceYProgressBar.Maximum = 100;
-            this.forceYProgressBar.Minimum = -100;
+            this.forceYProgressBar.Maximum = 200;
+            this.forceYProgressBar.Minimum = 0;
             this.forceYProgressBar.Name = "forceYProgressBar";
             this.forceYProgressBar.Size = new Size(400, 30);
             this.forceYProgressBar.TabIndex = 1;
@@ -407,9 +427,10 @@ namespace TDXAirMechanics.UI.Forms
         private Label forceMultiplierLabel;
         private CheckBox enableForceFeedbackCheckBox;
         private Panel devicesPanel;
-        private GroupBox joystickListGroup;
-        private ListBox joystickListBox;
+        private GroupBox joystickListGroup;        private ListBox joystickListBox;
         private Button refreshDevicesButton;
         private Button selectDeviceButton;
+        private Button connectButton;
+        private Button disconnectButton;
     }
 }

@@ -19,10 +19,9 @@ internal static class Program
     /// </summary>
     [STAThread]
     static async Task Main()
-    {
-        // Setup Serilog logging
+    {        // Setup Serilog logging
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Debug()
             .WriteTo.File("logs/tdx-air-mechanics-.log", 
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 7)

@@ -15,13 +15,22 @@ public interface ISimConnectManager : IDisposable
     /// <summary>
     /// Event fired when connection status changes
     /// </summary>
-    event EventHandler<bool>? ConnectionStatusChanged;
-
-    /// <summary>
+    event EventHandler<bool>? ConnectionStatusChanged;    /// <summary>
     /// Initialize the SimConnect connection
     /// </summary>
     /// <returns>True if initialization was successful</returns>
     Task<bool> InitializeAsync();
+
+    /// <summary>
+    /// Connect to SimConnect manually
+    /// </summary>
+    /// <returns>True if connection was successful</returns>
+    Task<bool> ConnectAsync();
+
+    /// <summary>
+    /// Disconnect from SimConnect
+    /// </summary>
+    Task DisconnectAsync();
 
     /// <summary>
     /// Start data collection

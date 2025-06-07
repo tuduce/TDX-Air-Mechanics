@@ -25,7 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TDXAirMechanics.Core\TDXAirMechanics.Core.csproj" />
   </ItemGroup>  <!-- SimConnect SDK References -->
-  <ItemGroup Condition="Exists('C:\MSFS 2024 SDK\SimConnect SDK\lib\managed\Microsoft.FlightSimulator.SimConnect.dll')">
+  <ItemGroup>
     <Reference Include="Microsoft.FlightSimulator.SimConnect">
       <HintPath>C:\MSFS 2024 SDK\SimConnect SDK\lib\managed\Microsoft.FlightSimulator.SimConnect.dll</HintPath>
       <Private>true</Private>
@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <!-- Copy SimConnect native libraries -->
-  <ItemGroup Condition="Exists('C:\MSFS 2024 SDK\SimConnect SDK\lib\SimConnect.dll')">
+  <ItemGroup>
     <None Include="C:\MSFS 2024 SDK\SimConnect SDK\lib\SimConnect.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
