@@ -118,9 +118,14 @@ public class GeneralSettings
     public bool StartWithWindows { get; set; }
 
     /// <summary>
-    /// Whether to minimize to system tray
+    /// Whether to minimize to system tray when main form is closed
     /// </summary>
     public bool MinimizeToTray { get; set; } = true;
+
+    /// <summary>
+    /// Whether to close application immediately instead of minimizing to tray
+    /// </summary>
+    public bool CloseToTrayOnExit { get; set; } = true;
 
     /// <summary>
     /// Auto-connect to MSFS when available

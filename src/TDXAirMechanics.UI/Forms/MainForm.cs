@@ -8,19 +8,23 @@ namespace TDXAirMechanics.UI.Forms;
 /// Main application form for TDX Air Mechanics
 /// </summary>
 public partial class MainForm : Form
-{
-    private readonly ILogger<MainForm> _logger;
+{    private readonly ILogger<MainForm> _logger;
     private readonly IApplicationService _applicationService;
     private readonly IStatusService _statusService;
+    private readonly IConfigurationManager _configurationManager;
     private readonly System.Windows.Forms.Timer _updateTimer;
-    private NotifyIcon? _notifyIcon;    public MainForm(
+    private NotifyIcon? _notifyIcon;
+    private bool _closeToTrayOnExit = true; // Default value
+
+    public MainForm(
         ILogger<MainForm> logger,
         IApplicationService applicationService,
-        IStatusService statusService)
-    {
+        IStatusService statusService,
+        IConfigurationManager configurationManager)    {
         _logger = logger;
         _applicationService = applicationService;
         _statusService = statusService;
+        _configurationManager = configurationManager;
         
         InitializeComponent();
         InitializeUI();
@@ -33,11 +37,12 @@ public partial class MainForm : Form
 
         // Subscribe to status changes
         _statusService.StatusChanged += OnStatusChanged;
-    }
-
-    private void InitializeUI()
+    }    private void InitializeUI()
     {
         _logger.LogInformation("Initializing main form UI");
+
+        // Load configuration
+        LoadConfiguration();
 
         // Setup system tray icon
         SetupSystemTray();
@@ -49,13 +54,14 @@ public partial class MainForm : Form
         this.FormClosing += MainForm_FormClosing;
         this.WindowState = FormWindowState.Normal;
         this.ShowInTaskbar = true;
-    }
-
-    private void SetupEventHandlers()
+    }    private void SetupEventHandlers()
     {
         // Force settings events
         forceMultiplierTrackBar.ValueChanged += ForceMultiplierTrackBar_ValueChanged;
         enableForceFeedbackCheckBox.CheckedChanged += EnableForceFeedbackCheckBox_CheckedChanged;
+
+        // General settings events
+        closeToTrayCheckBox.CheckedChanged += CloseToTrayCheckBox_CheckedChanged;
 
         // Device management events
         refreshDevicesButton.Click += RefreshDevicesButton_Click;
@@ -92,18 +98,43 @@ public partial class MainForm : Form
     {
         _notifyIcon?.Dispose();
         Application.Exit();
-    }
-
-    private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+    }    private async void LoadConfiguration()
     {
-        // Minimize to tray instead of closing
+        try
+        {
+            var config = await _configurationManager.LoadConfigurationAsync();
+            _closeToTrayOnExit = config.General.CloseToTrayOnExit;
+            
+            // Update UI to reflect loaded configuration
+            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
+            
+            _logger.LogInformation("Configuration loaded: CloseToTrayOnExit = {CloseToTrayOnExit}", _closeToTrayOnExit);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load configuration, using default settings");
+            _closeToTrayOnExit = true; // Default fallback
+            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
+        }
+    }private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+        // Check user preference for close behavior
         if (e.CloseReason == CloseReason.UserClosing)
         {
-            e.Cancel = true;
-            this.Hide();
-            _notifyIcon!.Visible = true;
-            _notifyIcon.ShowBalloonTip(2000, "TDX Air Mechanics", 
-                "Application minimized to system tray", ToolTipIcon.Info);
+            if (_closeToTrayOnExit)
+            {
+                // Minimize to tray instead of closing
+                e.Cancel = true;
+                this.Hide();
+                _notifyIcon!.Visible = true;
+                _notifyIcon.ShowBalloonTip(2000, "TDX Air Mechanics", 
+                    "Application minimized to system tray. Right-click the tray icon to exit.", ToolTipIcon.Info);
+            }
+            else
+            {
+                // Close the application completely
+                ExitApplication();
+            }
         }
     }
 
@@ -147,14 +178,33 @@ public partial class MainForm : Form
         var value = forceMultiplierTrackBar.Value;
         forceMultiplierLabel.Text = $"Force Multiplier: {value}%";
         _applicationService.SetForceMultiplier(value);
-    }
-
-    private void EnableForceFeedbackCheckBox_CheckedChanged(object? sender, EventArgs e)
+    }    private void EnableForceFeedbackCheckBox_CheckedChanged(object? sender, EventArgs e)
     {
         var enabled = enableForceFeedbackCheckBox.Checked;
         _applicationService.SetForceFeedbackEnabled(enabled);
         _logger.LogInformation("Force feedback {Status}", enabled ? "enabled" : "disabled");
-    }    private async void RefreshDevicesButton_Click(object? sender, EventArgs e)
+    }
+
+    private async void CloseToTrayCheckBox_CheckedChanged(object? sender, EventArgs e)
+    {
+        try
+        {
+            _closeToTrayOnExit = closeToTrayCheckBox.Checked;
+            
+            // Save the configuration with the new setting
+            var config = await _configurationManager.LoadConfigurationAsync();
+            config.General.CloseToTrayOnExit = _closeToTrayOnExit;
+            await _configurationManager.SaveConfigurationAsync(config);
+            
+            _logger.LogInformation("Close to tray setting changed to: {CloseToTrayOnExit}", _closeToTrayOnExit);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save close to tray setting");
+            // Revert the checkbox state if save failed
+            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
+        }
+    }private async void RefreshDevicesButton_Click(object? sender, EventArgs e)
     {
         try
         {

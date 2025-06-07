@@ -37,12 +37,13 @@ namespace TDXAirMechanics.UI.Forms
             this.flightDataGroup = new GroupBox();
             this.airspeedLabel = new Label();
             this.altitudeLabel = new Label();
-            this.headingLabel = new Label();
-            this.settingsPanel = new Panel();
+            this.headingLabel = new Label();            this.settingsPanel = new Panel();
             this.forceSettingsGroup = new GroupBox();
             this.forceMultiplierTrackBar = new TrackBar();
             this.forceMultiplierLabel = new Label();
             this.enableForceFeedbackCheckBox = new CheckBox();
+            this.generalSettingsGroup = new GroupBox();
+            this.closeToTrayCheckBox = new CheckBox();
             this.devicesPanel = new Panel();
             this.joystickListGroup = new GroupBox();
             this.joystickListBox = new ListBox();
@@ -56,9 +57,9 @@ namespace TDXAirMechanics.UI.Forms
             this.connectionStatusGroup.SuspendLayout();
             this.forcePanel.SuspendLayout();
             this.forceDisplayGroup.SuspendLayout();
-            this.flightDataGroup.SuspendLayout();
-            this.settingsPanel.SuspendLayout();
+            this.flightDataGroup.SuspendLayout();            this.settingsPanel.SuspendLayout();
             this.forceSettingsGroup.SuspendLayout();
+            this.generalSettingsGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.forceMultiplierTrackBar)).BeginInit();
             this.devicesPanel.SuspendLayout();
             this.joystickListGroup.SuspendLayout();
@@ -267,9 +268,9 @@ namespace TDXAirMechanics.UI.Forms
             this.headingLabel.Size = new Size(110, 20);
             this.headingLabel.TabIndex = 2;
             this.headingLabel.Text = "Heading: 0°";
+            //            // settingsPanel
             // 
-            // settingsPanel
-            // 
+            this.settingsPanel.Controls.Add(this.generalSettingsGroup);
             this.settingsPanel.Controls.Add(this.forceSettingsGroup);
             this.settingsPanel.Dock = DockStyle.Fill;
             this.settingsPanel.Location = new Point(3, 3);
@@ -318,9 +319,31 @@ namespace TDXAirMechanics.UI.Forms
             this.enableForceFeedbackCheckBox.Location = new Point(450, 70);
             this.enableForceFeedbackCheckBox.Name = "enableForceFeedbackCheckBox";
             this.enableForceFeedbackCheckBox.Size = new Size(190, 24);
-            this.enableForceFeedbackCheckBox.TabIndex = 2;
-            this.enableForceFeedbackCheckBox.Text = "Enable Force Feedback";
+            this.enableForceFeedbackCheckBox.TabIndex = 2;            this.enableForceFeedbackCheckBox.Text = "Enable Force Feedback";
             this.enableForceFeedbackCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // generalSettingsGroup
+            // 
+            this.generalSettingsGroup.Controls.Add(this.closeToTrayCheckBox);
+            this.generalSettingsGroup.Dock = DockStyle.Top;
+            this.generalSettingsGroup.Location = new Point(0, 150);
+            this.generalSettingsGroup.Name = "generalSettingsGroup";
+            this.generalSettingsGroup.Size = new Size(886, 80);
+            this.generalSettingsGroup.TabIndex = 1;
+            this.generalSettingsGroup.TabStop = false;
+            this.generalSettingsGroup.Text = "General Settings";
+            // 
+            // closeToTrayCheckBox
+            // 
+            this.closeToTrayCheckBox.AutoSize = true;
+            this.closeToTrayCheckBox.Checked = true;
+            this.closeToTrayCheckBox.CheckState = CheckState.Checked;
+            this.closeToTrayCheckBox.Location = new Point(20, 30);
+            this.closeToTrayCheckBox.Name = "closeToTrayCheckBox";
+            this.closeToTrayCheckBox.Size = new Size(280, 24);
+            this.closeToTrayCheckBox.TabIndex = 0;
+            this.closeToTrayCheckBox.Text = "Minimize to system tray when closing";
+            this.closeToTrayCheckBox.UseVisualStyleBackColor = true;
             // 
             // devicesPanel
             // 
@@ -398,10 +421,11 @@ namespace TDXAirMechanics.UI.Forms
             this.forceDisplayGroup.ResumeLayout(false);
             this.forceDisplayGroup.PerformLayout();
             this.flightDataGroup.ResumeLayout(false);
-            this.flightDataGroup.PerformLayout();
-            this.settingsPanel.ResumeLayout(false);
+            this.flightDataGroup.PerformLayout();            this.settingsPanel.ResumeLayout(false);
             this.forceSettingsGroup.ResumeLayout(false);
             this.forceSettingsGroup.PerformLayout();
+            this.generalSettingsGroup.ResumeLayout(false);
+            this.generalSettingsGroup.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.forceMultiplierTrackBar)).EndInit();
             this.devicesPanel.ResumeLayout(false);
             this.joystickListGroup.ResumeLayout(false);
@@ -433,6 +457,8 @@ namespace TDXAirMechanics.UI.Forms
         private TrackBar forceMultiplierTrackBar;
         private Label forceMultiplierLabel;
         private CheckBox enableForceFeedbackCheckBox;
+        private GroupBox generalSettingsGroup;
+        private CheckBox closeToTrayCheckBox;
         private Panel devicesPanel;
         private GroupBox joystickListGroup;        private ListBox joystickListBox;
         private Button refreshDevicesButton;
