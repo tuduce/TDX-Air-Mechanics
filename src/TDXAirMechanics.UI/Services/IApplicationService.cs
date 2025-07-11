@@ -84,6 +84,11 @@ public interface IApplicationService
     /// Event fired when the application status changes
     /// </summary>
     event EventHandler<ApplicationStatusEventArgs>? StatusChanged;
+
+    /// <summary>
+    /// Get selected joystick name
+    /// </summary>
+    string? SelectedJoystickName { get; }
 }
 
 /// <summary>

@@ -1,4 +1,7 @@
+using MaterialSkin;
+using MaterialSkin.Controls;
 using Microsoft.Extensions.Logging;
+using System.Drawing.Drawing2D;
 using TDXAirMechanics.Core.Interfaces;
 using TDXAirMechanics.UI.Services;
 
@@ -7,8 +10,11 @@ namespace TDXAirMechanics.UI.Forms;
 /// <summary>
 /// Main application form for TDX Air Mechanics
 /// </summary>
-public partial class MainForm : Form
-{    private readonly ILogger<MainForm> _logger;
+public partial class MainForm : MaterialForm
+{
+    readonly MaterialSkinManager materialSkinManager;
+
+    private readonly ILogger<MainForm> _logger;
     private readonly IApplicationService _applicationService;
     private readonly IStatusService _statusService;
     private readonly IConfigurationManager _configurationManager;
@@ -16,17 +22,46 @@ public partial class MainForm : Form
     private NotifyIcon? _notifyIcon;
     private bool _closeToTrayOnExit = true; // Default value
 
+#if DEBUG
+    // Parameterless constructor for Windows Forms Designer support
+    public MainForm() : this(null!, null!, null!, null!)
+    {
+        // This constructor is only for the designer and should not be used at runtime.
+    }
+#endif
+
     public MainForm(
         ILogger<MainForm> logger,
         IApplicationService applicationService,
         IStatusService statusService,
-        IConfigurationManager configurationManager)    {
+        IConfigurationManager configurationManager)
+    {
         _logger = logger;
         _applicationService = applicationService;
         _statusService = statusService;
         _configurationManager = configurationManager;
         
         InitializeComponent();
+
+        materialSkinManager = MaterialSkinManager.Instance;
+        // materialSkinManager.EnforceBackcolorOnAllComponents = true;
+        materialSkinManager.AddFormToManage(this);
+        materialSkinManager.Theme = MaterialSkinManager.Themes.DARK;
+        materialSkinManager.ColorScheme = new ColorScheme(
+            Primary.BlueGrey800, 
+            Primary.BlueGrey900, 
+            Primary.BlueGrey500, 
+            Accent.Orange700, // LightBlue200, 
+            TextShade.WHITE);
+
+        try
+        {
+            this.Icon = new Icon(System.IO.Path.Combine(Application.StartupPath, "Resources", "app_icon.ico"));
+        }
+        catch (System.Exception)
+        {
+            // Icon loading failed - application will use default icon
+        }
         InitializeUI();
 
         // Setup update timer
@@ -37,7 +72,47 @@ public partial class MainForm : Form
 
         // Subscribe to status changes
         _statusService.StatusChanged += OnStatusChanged;
-    }    private void InitializeUI()
+    }
+
+    private void SetPictureBoxJoystickIconColor(Color color)
+    {
+        if (pictureBoxJoystick.Image == null)
+            return;
+        var original = (Bitmap)pictureBoxJoystick.Image;
+        var recolored = new Bitmap(original.Width, original.Height);
+        using (var g = Graphics.FromImage(recolored))
+        {
+            g.Clear(Color.Transparent);
+            var colorMatrix = new System.Drawing.Imaging.ColorMatrix(new float[][]
+            {
+                new float[] {0, 0, 0, 0, 0},
+                new float[] {0, 0, 0, 0, 0},
+                new float[] {0, 0, 0, 0, 0},
+                new float[] {0, 0, 0, 1, 0},
+                new float[] {color.R/255f, color.G/255f, color.B/255f, 0, 1}
+            });
+            var attributes = new System.Drawing.Imaging.ImageAttributes();
+            attributes.SetColorMatrix(colorMatrix, System.Drawing.Imaging.ColorMatrixFlag.Default, System.Drawing.Imaging.ColorAdjustType.Bitmap);
+            g.DrawImage(original, new Rectangle(0, 0, original.Width, original.Height), 0, 0, original.Width, original.Height, GraphicsUnit.Pixel, attributes);
+        }
+        pictureBoxJoystick.Image = recolored;
+    }
+
+    private void ApplyDarkModeToJoystickIcon()
+    {
+        // Use the MaterialSkin text color for dark mode
+        if (materialSkinManager.Theme == MaterialSkinManager.Themes.DARK)
+        {
+            SetPictureBoxJoystickIconColor(materialSkinManager.ColorScheme.TextColor);
+        }
+        else
+        {
+            // Optionally, set to a different color for light mode
+            SetPictureBoxJoystickIconColor(Color.Black);
+        }
+    }
+
+    private void InitializeUI()
     {
         _logger.LogInformation("Initializing main form UI");
 
@@ -54,7 +129,10 @@ public partial class MainForm : Form
         this.FormClosing += MainForm_FormClosing;
         this.WindowState = FormWindowState.Normal;
         this.ShowInTaskbar = true;
-    }    private void SetupEventHandlers()
+        ApplyDarkModeToJoystickIcon();
+    }
+
+    private void SetupEventHandlers()
     {
         // Force settings events
         forceMultiplierTrackBar.ValueChanged += ForceMultiplierTrackBar_ValueChanged;
@@ -101,7 +179,9 @@ public partial class MainForm : Form
     {
         _notifyIcon?.Dispose();
         Application.Exit();
-    }    private async void LoadConfiguration()
+    }
+
+    private async void LoadConfiguration()
     {
         try
         {
@@ -119,7 +199,9 @@ public partial class MainForm : Form
             _closeToTrayOnExit = true; // Default fallback
             closeToTrayCheckBox.Checked = _closeToTrayOnExit;
         }
-    }private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+    }
+
+    private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
         // Check user preference for close behavior
         if (e.CloseReason == CloseReason.UserClosing)
@@ -145,7 +227,29 @@ public partial class MainForm : Form
     {
         // Update UI with current status
         UpdateStatusDisplay();
-    }    private void UpdateStatusDisplay()
+    }
+
+    private void UpdateJoystickSelectedIndicator()
+    {
+        // Check if a force-feedback joystick is selected
+        var isJoystickConnected = _applicationService.IsJoystickConnected;
+        var joystickName = _applicationService.SelectedJoystickName;
+
+        if (isJoystickConnected && !string.IsNullOrEmpty(joystickName))
+        {
+            buttonJoystickSelected.BackColor = Color.LimeGreen;
+            buttonJoystickSelected.FlatAppearance.BorderColor = Color.DarkGreen;
+            labelJoystickSelected.Text = joystickName;
+        }
+        else
+        {
+            buttonJoystickSelected.BackColor = Color.Tomato;
+            buttonJoystickSelected.FlatAppearance.BorderColor = Color.Firebrick;
+            labelJoystickSelected.Text = "No joystick selected";
+        }
+    }
+
+    private void UpdateStatusDisplay()
     {
         // Update connection status
         var isSimConnected = _applicationService.IsSimConnectConnected;
@@ -167,7 +271,9 @@ public partial class MainForm : Form
             airspeedLabel.Text = $"Airspeed: {flightData.AirspeedKnots:F0} kts";
             altitudeLabel.Text = $"Altitude: {flightData.AltitudeFeet:F0} ft";
             headingLabel.Text = $"Heading: {flightData.HeadingDegrees:F0}°";
-        }        // Update force display
+        }
+
+        // Update force display
         var currentForces = _applicationService.CurrentForces;
         if (currentForces != null)
         {
@@ -176,12 +282,18 @@ public partial class MainForm : Form
             forceXProgressBar.Value = (int)((currentForces.ForceX + 1.0) * 100);
             forceYProgressBar.Value = (int)((currentForces.ForceY + 1.0) * 100);
         }
-    }private void ForceMultiplierTrackBar_ValueChanged(object? sender, EventArgs e)
+        // Update joystick selected indicator
+        UpdateJoystickSelectedIndicator();
+    }
+
+    private void ForceMultiplierTrackBar_ValueChanged(object? sender, EventArgs e)
     {
         var value = forceMultiplierTrackBar.Value;
         forceMultiplierLabel.Text = $"Force Multiplier: {value}%";
         _applicationService.SetForceMultiplier(value);
-    }    private void EnableForceFeedbackCheckBox_CheckedChanged(object? sender, EventArgs e)
+    }
+
+    private void EnableForceFeedbackCheckBox_CheckedChanged(object? sender, EventArgs e)
     {
         var enabled = enableForceFeedbackCheckBox.Checked;
         _applicationService.SetForceFeedbackEnabled(enabled);
@@ -205,7 +317,8 @@ public partial class MainForm : Form
         {
             _logger.LogError(ex, "Failed to save close to tray setting");
             // Revert the checkbox state if save failed
-            closeToTrayCheckBox.Checked = _closeToTrayOnExit;        }
+            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
+        }
     }
 
     private async void MainTabControl_SelectedIndexChanged(object? sender, EventArgs e)
@@ -215,7 +328,9 @@ public partial class MainForm : Form
         {
             await RefreshDevicesIfNeeded();
         }
-    }    private async Task RefreshDevicesIfNeeded()
+    }
+
+    private async Task RefreshDevicesIfNeeded()
     {
         // Only refresh if the list is empty or contains the "No devices found" message
         if (joystickListBox.Items.Count == 0 || 
@@ -229,7 +344,9 @@ public partial class MainForm : Form
             
             await RefreshDevices(showErrorDialog: false);
         }
-    }private async Task RefreshDevices(bool showErrorDialog = false)
+    }
+
+    private async Task RefreshDevices(bool showErrorDialog = false)
     {
         try
         {
@@ -262,7 +379,9 @@ public partial class MainForm : Form
         {
             refreshDevicesButton.Enabled = true;
         }
-    }    private async void RefreshDevicesButton_Click(object? sender, EventArgs e)
+    }
+
+    private async void RefreshDevicesButton_Click(object? sender, EventArgs e)
     {
         await RefreshDevices(showErrorDialog: true);
     }
@@ -274,7 +393,9 @@ public partial class MainForm : Form
             MessageBox.Show("Please select a device first.", "No Device Selected", 
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
-        }        try
+        }
+
+        try
         {
             selectDeviceButton.Enabled = false;
             var deviceName = joystickListBox.SelectedItem.ToString();
@@ -283,6 +404,8 @@ public partial class MainForm : Form
                 await _applicationService.SelectDeviceAsync(deviceName, this.Handle);
                 MessageBox.Show($"Selected device: {deviceName}", "Device Selected", 
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
+                // Update indicator immediately after selection
+                UpdateJoystickSelectedIndicator();
             }
         }
         catch (Exception ex)
@@ -294,7 +417,8 @@ public partial class MainForm : Form
         finally
         {
             selectDeviceButton.Enabled = true;
-        }    }
+        }
+    }
 
     private async void ConnectButton_Click(object? sender, EventArgs e)
     {
@@ -367,7 +491,9 @@ public partial class MainForm : Form
             _logger.LogDebug("Status changed: {Status}", e.Message);
             // Update UI based on status change
         });
-    }    protected override void Dispose(bool disposing)
+    }
+
+    protected override void Dispose(bool disposing)
     {
         if (disposing)
         {

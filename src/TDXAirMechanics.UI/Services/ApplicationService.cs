@@ -52,6 +52,13 @@ public class ApplicationService : IApplicationService
     public bool IsJoystickConnected => _directInputManager?.IsJoystickConnected ?? false;
     public FlightData? CurrentFlightData => _currentFlightData;
     public ForceFeedbackData? CurrentForces => _currentForces;
+    public string? SelectedJoystickName
+    {
+        get
+        {
+            return _directInputManager?.ConnectedJoystick?.Name;
+        }
+    }
 
     public event EventHandler<ApplicationStatusEventArgs>? StatusChanged;    public async Task StartAsync()
     {

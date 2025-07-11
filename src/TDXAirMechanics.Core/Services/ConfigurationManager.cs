@@ -31,6 +31,15 @@ public class ConfigurationManager : IConfigurationManager
         Directory.CreateDirectory(_configDirectory);
     }
 
+    public ConfigurationManager(ILogger<ConfigurationManager> logger, string configFilePath)
+    {
+        _logger = logger;
+        _configDirectory = Path.GetDirectoryName(configFilePath) ?? string.Empty;
+        _configFile = configFilePath;
+        _profilesFile = Path.Combine(_configDirectory, "aircraft-profiles.json");
+        Directory.CreateDirectory(_configDirectory);
+    }
+
     public async Task<AppConfiguration> LoadConfigurationAsync()
     {
         try
