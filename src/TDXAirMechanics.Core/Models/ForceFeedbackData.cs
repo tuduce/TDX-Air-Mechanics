@@ -283,3 +283,41 @@ public class CurvePoint
         Output = output;
     }
 }
+
+/// <summary>
+/// Generic force feedback effect definition
+/// </summary>
+public class ForceFeedbackEffect
+{
+    /// <summary>
+    /// Type of effect (e.g., Spring, Damper, etc.)
+    /// </summary>
+    public EffectType EffectType { get; set; }
+
+    /// <summary>
+    /// Parameters for the effect (key-value pairs)
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
+
+    /// <summary>
+    /// Duration in milliseconds (0 = infinite)
+    /// </summary>
+    public int DurationMs { get; set; } = 0;
+
+    /// <summary>
+    /// Priority of this effect
+    /// </summary>
+    public ForcePriority Priority { get; set; } = ForcePriority.Normal;
+}
+
+/// <summary>
+/// Supported force feedback effect types
+/// </summary>
+public enum EffectType
+{
+    Spring,
+    Damper,
+    Friction,
+    Inertia,
+    Custom
+}

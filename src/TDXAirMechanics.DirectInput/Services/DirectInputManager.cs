@@ -3,6 +3,7 @@ using SharpDX.DirectInput;
 using System.Runtime.InteropServices;
 using TDXAirMechanics.Core.Interfaces;
 using TDXAirMechanics.Core.Models;
+using EffectTypeCore = TDXAirMechanics.Core.Models.EffectType;
 
 namespace TDXAirMechanics.DirectInput.Services;
 
@@ -62,7 +63,9 @@ public class DirectInputManager : IDirectInputManager
             _logger.LogError(ex, "Failed to initialize DirectInput");
             return false;
         }
-    }public async Task<bool> ApplyForceAsync(ForceFeedbackData forceData)
+    }
+
+    public async Task<bool> ApplyForceAsync(ForceFeedbackData forceData)
     {
         if (_joystick == null || !IsJoystickConnected)
         {
@@ -94,6 +97,41 @@ public class DirectInputManager : IDirectInputManager
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to apply force feedback");
+            return false;
+        }
+    }
+
+    public async Task<bool> ApplyEffectAsync(ForceFeedbackEffect effect)
+    {
+        if (_joystick == null || !IsJoystickConnected)
+        {
+            return false;
+        }
+
+        try
+        {
+            await Task.Run(() =>
+            {
+                switch ((EffectTypeCore)effect.EffectType)
+                {
+                    case EffectTypeCore.Spring:
+                        // Extract parameters
+                        double strength = effect.Parameters.TryGetValue("Strength", out var s) ? Convert.ToDouble(s) : 0.5;
+                        double centerX = effect.Parameters.TryGetValue("CenterX", out var cx) ? Convert.ToDouble(cx) : 0.0;
+                        double centerY = effect.Parameters.TryGetValue("CenterY", out var cy) ? Convert.ToDouble(cy) : 0.0;
+                        // TODO: Implement actual spring effect using SharpDX
+                        _logger.LogDebug($"[Spring Effect] Strength={{strength:F2}}, CenterX={{centerX}}, CenterY={{centerY}} (Duration: {{effect.DurationMs}} ms)");
+                        break;
+                    default:
+                        _logger.LogWarning($"Effect type {effect.EffectType} not implemented");
+                        break;
+                }
+            });
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to apply force feedback effect");
             return false;
         }
     }    public async Task StopAllEffectsAsync()

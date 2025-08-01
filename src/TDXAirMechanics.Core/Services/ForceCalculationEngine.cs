@@ -154,4 +154,29 @@ public class ForceCalculationEngine : IForceCalculationEngine
         if (Math.Abs(forceData.ForceY) < config.MinForceThreshold)
             forceData.ForceY = 0;
     }
+
+    /// <summary>
+    /// Compute spring effect parameters based on airspeed and barber pole
+    /// </summary>
+    /// <param name="indicatedAirspeed">Current indicated airspeed (knots)</param>
+    /// <param name="barberPoleAirspeed">Maximum airspeed (barber pole, knots)</param>
+    /// <returns>Dictionary of spring effect parameters</returns>
+    public static Dictionary<string, object> ComputeSpringEffectParameters(double indicatedAirspeed, double barberPoleAirspeed)
+    {
+        // Normalize airspeed (0.0 = stopped, 1.0 = barber pole)
+        double normalized = barberPoleAirspeed > 0 ? Math.Clamp(indicatedAirspeed / barberPoleAirspeed, 0.0, 1.0) : 0.0;
+        // Example: spring strength increases with airspeed, up to a max
+        double minStrength = 0.1;
+        double maxStrength = 1.0;
+        double strength = minStrength + (maxStrength - minStrength) * normalized;
+        // Center point (0,0) for joystick
+        double centerX = 0.0;
+        double centerY = 0.0;
+        return new Dictionary<string, object>
+        {
+            { "Strength", strength },
+            { "CenterX", centerX },
+            { "CenterY", centerY }
+        };
+    }
 }
