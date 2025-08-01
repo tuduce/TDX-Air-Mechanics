@@ -35,7 +35,7 @@ namespace TDXAirMechanics.UI.Forms
             disconnectButton = new Button();
             connectButton = new Button();
             joystickStatusLabel = new Label();
-            msfsStatusLabel = new Label();
+            matLabelMSFSConnected = new MaterialSkin.Controls.MaterialLabel();
             closeToTrayCheckBox = new CheckBox();
             enableForceFeedbackCheckBox = new CheckBox();
             forceMultiplierLabel = new Label();
@@ -45,7 +45,9 @@ namespace TDXAirMechanics.UI.Forms
             joystickListBox = new ListBox();
             mainTabControl = new MaterialSkin.Controls.MaterialTabControl();
             tabPageDashboard = new TabPage();
-            materialCard1 = new MaterialSkin.Controls.MaterialCard();
+            materialCardSimulator = new MaterialSkin.Controls.MaterialCard();
+            pictureBox1 = new PictureBox();
+            materialCardJoystick = new MaterialSkin.Controls.MaterialCard();
             pictureBoxJoystick = new PictureBox();
             tabPageEffects = new TabPage();
             tabPageDevice = new TabPage();
@@ -54,7 +56,9 @@ namespace TDXAirMechanics.UI.Forms
             ((System.ComponentModel.ISupportInitialize)forceMultiplierTrackBar).BeginInit();
             mainTabControl.SuspendLayout();
             tabPageDashboard.SuspendLayout();
-            materialCard1.SuspendLayout();
+            materialCardSimulator.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            materialCardJoystick.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxJoystick).BeginInit();
             tabPageDevice.SuspendLayout();
             tabPageSettings.SuspendLayout();
@@ -80,14 +84,15 @@ namespace TDXAirMechanics.UI.Forms
             // 
             // buttonSimConnected
             // 
-            buttonSimConnected.FlatAppearance.BorderColor = Color.Green;
+            buttonSimConnected.BackColor = Color.Tomato;
+            buttonSimConnected.FlatAppearance.BorderColor = Color.Firebrick;
             buttonSimConnected.FlatAppearance.BorderSize = 3;
             buttonSimConnected.FlatStyle = FlatStyle.Flat;
-            buttonSimConnected.Location = new Point(77, 416);
+            buttonSimConnected.Location = new Point(156, 37);
             buttonSimConnected.Name = "buttonSimConnected";
-            buttonSimConnected.Size = new Size(18, 18);
+            buttonSimConnected.Size = new Size(19, 21);
             buttonSimConnected.TabIndex = 2;
-            buttonSimConnected.UseVisualStyleBackColor = true;
+            buttonSimConnected.UseVisualStyleBackColor = false;
             // 
             // forceXLabel
             // 
@@ -101,7 +106,7 @@ namespace TDXAirMechanics.UI.Forms
             // labelJoystickSelected
             // 
             labelJoystickSelected.AutoSize = true;
-            labelJoystickSelected.Location = new Point(83, 17);
+            labelJoystickSelected.Location = new Point(78, 14);
             labelJoystickSelected.Name = "labelJoystickSelected";
             labelJoystickSelected.Size = new Size(124, 17);
             labelJoystickSelected.TabIndex = 1;
@@ -119,12 +124,13 @@ namespace TDXAirMechanics.UI.Forms
             // buttonJoystickSelected
             // 
             buttonJoystickSelected.BackColor = Color.Tomato;
+            buttonJoystickSelected.Dock = DockStyle.Left;
             buttonJoystickSelected.FlatAppearance.BorderColor = Color.Firebrick;
             buttonJoystickSelected.FlatAppearance.BorderSize = 3;
             buttonJoystickSelected.FlatStyle = FlatStyle.Flat;
-            buttonJoystickSelected.Location = new Point(23, 68);
+            buttonJoystickSelected.Location = new Point(14, 14);
             buttonJoystickSelected.Name = "buttonJoystickSelected";
-            buttonJoystickSelected.Size = new Size(38, 10);
+            buttonJoystickSelected.Size = new Size(10, 47);
             buttonJoystickSelected.TabIndex = 0;
             buttonJoystickSelected.UseVisualStyleBackColor = false;
             // 
@@ -195,14 +201,17 @@ namespace TDXAirMechanics.UI.Forms
             joystickStatusLabel.TabIndex = 1;
             joystickStatusLabel.Text = "Joystick: Not Selected";
             // 
-            // msfsStatusLabel
+            // matLabelMSFSConnected
             // 
-            msfsStatusLabel.AutoSize = true;
-            msfsStatusLabel.Location = new Point(40, 166);
-            msfsStatusLabel.Name = "msfsStatusLabel";
-            msfsStatusLabel.Size = new Size(125, 17);
-            msfsStatusLabel.TabIndex = 0;
-            msfsStatusLabel.Text = "MSFS: Disconnected";
+            matLabelMSFSConnected.AutoSize = true;
+            matLabelMSFSConnected.Depth = 0;
+            matLabelMSFSConnected.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            matLabelMSFSConnected.Location = new Point(33, 15);
+            matLabelMSFSConnected.MouseState = MaterialSkin.MouseState.HOVER;
+            matLabelMSFSConnected.Name = "matLabelMSFSConnected";
+            matLabelMSFSConnected.Size = new Size(142, 19);
+            matLabelMSFSConnected.TabIndex = 0;
+            matLabelMSFSConnected.Text = "MSFS disconnected";
             // 
             // closeToTrayCheckBox
             // 
@@ -296,15 +305,14 @@ namespace TDXAirMechanics.UI.Forms
             // 
             // tabPageDashboard
             // 
-            tabPageDashboard.Controls.Add(materialCard1);
+            tabPageDashboard.Controls.Add(materialCardSimulator);
+            tabPageDashboard.Controls.Add(materialCardJoystick);
             tabPageDashboard.Controls.Add(label2);
             tabPageDashboard.Controls.Add(headingLabel);
-            tabPageDashboard.Controls.Add(buttonSimConnected);
             tabPageDashboard.Controls.Add(forceYLabel);
             tabPageDashboard.Controls.Add(disconnectButton);
             tabPageDashboard.Controls.Add(altitudeLabel);
             tabPageDashboard.Controls.Add(forceXLabel);
-            tabPageDashboard.Controls.Add(msfsStatusLabel);
             tabPageDashboard.Controls.Add(forceYProgressBar);
             tabPageDashboard.Controls.Add(airspeedLabel);
             tabPageDashboard.Controls.Add(connectButton);
@@ -319,28 +327,55 @@ namespace TDXAirMechanics.UI.Forms
             tabPageDashboard.Text = "Dashboard";
             tabPageDashboard.UseVisualStyleBackColor = true;
             // 
-            // materialCard1
+            // materialCardSimulator
             // 
-            materialCard1.BackColor = Color.FromArgb(255, 255, 255);
-            materialCard1.Controls.Add(pictureBoxJoystick);
-            materialCard1.Controls.Add(labelJoystickSelected);
-            materialCard1.Controls.Add(buttonJoystickSelected);
-            materialCard1.Depth = 0;
-            materialCard1.ForeColor = Color.FromArgb(222, 0, 0, 0);
-            materialCard1.Location = new Point(17, 17);
-            materialCard1.Margin = new Padding(14);
-            materialCard1.MouseState = MaterialSkin.MouseState.HOVER;
-            materialCard1.Name = "materialCard1";
-            materialCard1.Padding = new Padding(14);
-            materialCard1.Size = new Size(237, 95);
-            materialCard1.TabIndex = 4;
+            materialCardSimulator.BackColor = Color.FromArgb(255, 255, 255);
+            materialCardSimulator.Controls.Add(pictureBox1);
+            materialCardSimulator.Controls.Add(buttonSimConnected);
+            materialCardSimulator.Controls.Add(matLabelMSFSConnected);
+            materialCardSimulator.Depth = 0;
+            materialCardSimulator.ForeColor = Color.FromArgb(222, 0, 0, 0);
+            materialCardSimulator.Location = new Point(260, 17);
+            materialCardSimulator.Margin = new Padding(14);
+            materialCardSimulator.MouseState = MaterialSkin.MouseState.HOVER;
+            materialCardSimulator.Name = "materialCardSimulator";
+            materialCardSimulator.Padding = new Padding(14);
+            materialCardSimulator.Size = new Size(250, 75);
+            materialCardSimulator.TabIndex = 5;
+            // 
+            // pictureBox1
+            // 
+            pictureBox1.Dock = DockStyle.Right;
+            pictureBox1.Image = (Image)resources.GetObject("pictureBox1.Image");
+            pictureBox1.Location = new Point(188, 14);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new Size(48, 47);
+            pictureBox1.TabIndex = 3;
+            pictureBox1.TabStop = false;
+            // 
+            // materialCardJoystick
+            // 
+            materialCardJoystick.BackColor = Color.FromArgb(255, 255, 255);
+            materialCardJoystick.Controls.Add(pictureBoxJoystick);
+            materialCardJoystick.Controls.Add(labelJoystickSelected);
+            materialCardJoystick.Controls.Add(buttonJoystickSelected);
+            materialCardJoystick.Depth = 0;
+            materialCardJoystick.ForeColor = Color.FromArgb(222, 0, 0, 0);
+            materialCardJoystick.Location = new Point(17, 17);
+            materialCardJoystick.Margin = new Padding(14);
+            materialCardJoystick.MouseState = MaterialSkin.MouseState.HOVER;
+            materialCardJoystick.Name = "materialCardJoystick";
+            materialCardJoystick.Padding = new Padding(14);
+            materialCardJoystick.Size = new Size(225, 75);
+            materialCardJoystick.TabIndex = 4;
             // 
             // pictureBoxJoystick
             // 
+            pictureBoxJoystick.Dock = DockStyle.Left;
             pictureBoxJoystick.Image = (Image)resources.GetObject("pictureBoxJoystick.Image");
-            pictureBoxJoystick.Location = new Point(17, 17);
+            pictureBoxJoystick.Location = new Point(24, 14);
             pictureBoxJoystick.Name = "pictureBoxJoystick";
-            pictureBoxJoystick.Size = new Size(48, 48);
+            pictureBoxJoystick.Size = new Size(48, 47);
             pictureBoxJoystick.TabIndex = 0;
             pictureBoxJoystick.TabStop = false;
             // 
@@ -411,8 +446,11 @@ namespace TDXAirMechanics.UI.Forms
             mainTabControl.ResumeLayout(false);
             tabPageDashboard.ResumeLayout(false);
             tabPageDashboard.PerformLayout();
-            materialCard1.ResumeLayout(false);
-            materialCard1.PerformLayout();
+            materialCardSimulator.ResumeLayout(false);
+            materialCardSimulator.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            materialCardJoystick.ResumeLayout(false);
+            materialCardJoystick.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxJoystick).EndInit();
             tabPageDevice.ResumeLayout(false);
             tabPageSettings.ResumeLayout(false);
@@ -421,7 +459,6 @@ namespace TDXAirMechanics.UI.Forms
         }
 
         #endregion
-        private Label msfsStatusLabel;
         private Label joystickStatusLabel;
         private ProgressBar forceXProgressBar;
         private ProgressBar forceYProgressBar;
@@ -449,7 +486,10 @@ private ListBox joystickListBox;
         private TabPage tabPageDevice;
         private TabPage tabPageSettings;
         private ImageList iconsList;
-        private MaterialSkin.Controls.MaterialCard materialCard1;
+        private MaterialSkin.Controls.MaterialCard materialCardJoystick;
         private PictureBox pictureBoxJoystick;
+        private MaterialSkin.Controls.MaterialCard materialCardSimulator;
+        private PictureBox pictureBox1;
+        private MaterialSkin.Controls.MaterialLabel matLabelMSFSConnected;
     }
 }

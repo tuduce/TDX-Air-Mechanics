@@ -255,8 +255,8 @@ public partial class MainForm : MaterialForm
         var isSimConnected = _applicationService.IsSimConnectConnected;
         var isJoystickConnected = _applicationService.IsJoystickConnected;
 
-        msfsStatusLabel.Text = $"MSFS: {(isSimConnected ? "Connected" : "Disconnected")}";
-        joystickStatusLabel.Text = $"Joystick: {(isJoystickConnected ? "Connected" : "Not Selected")}";
+        matLabelMSFSConnected.Text = $"MSFS {(isSimConnected ? "connected" : "disconnected")}";
+        joystickStatusLabel.Text = $"Joystick {(isJoystickConnected ? "connected" : "not selected")}";
 
         // Update connection button states
         connectButton.Enabled = !isSimConnected;
