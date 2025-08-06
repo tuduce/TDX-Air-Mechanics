@@ -19,13 +19,6 @@ public interface IDirectInputManager : IDisposable
     Task<bool> InitializeAsync();
 
     /// <summary>
-    /// Apply force feedback to the joystick
-    /// </summary>
-    /// <param name="forceData">Force data to apply</param>
-    /// <returns>True if force was applied successfully</returns>
-    Task<bool> ApplyForceAsync(ForceFeedbackData forceData);
-
-    /// <summary>
     /// Apply a generic force feedback effect to the joystick
     /// </summary>
     /// <param name="effect">Effect to apply</param>

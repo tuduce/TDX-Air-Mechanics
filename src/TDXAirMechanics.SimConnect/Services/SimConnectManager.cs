@@ -11,7 +11,8 @@ namespace TDXAirMechanics.SimConnect.Services;
 /// SimConnect manager implementation for Microsoft Flight Simulator integration
 /// </summary>
 public class SimConnectManager : ISimConnectManager
-{    private readonly ILogger<SimConnectManager> _logger;
+{    
+    private readonly ILogger<SimConnectManager> _logger;
     private bool _disposed;
     private bool _isConnected; private FlightData? _currentFlightData;
     private int _updateRateHz = 30;
@@ -32,10 +33,14 @@ public class SimConnectManager : ISimConnectManager
     private enum DATA_REQUESTS
     {
         FlightDataRequest,
-    }    // Data structure for SimConnect - fields must match exact order of AddToDataDefinition calls
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]    private struct SimFlightData
+    }    
+    
+    // Data structure for SimConnect - fields must match exact order of AddToDataDefinition calls
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]    
+    private struct SimFlightData
     {
         public double IndicatedAirspeed;    // AIRSPEED INDICATED
+        public double BarberPoleAirspeed;    // AIRSPEED BARBER POLE
         public double Altitude;             // PLANE ALTITUDE
         public double VerticalSpeed;        // VERTICAL SPEED
         public double Heading;              // PLANE HEADING DEGREES TRUE
@@ -84,7 +89,8 @@ public class SimConnectManager : ISimConnectManager
     }
 
     public async Task<bool> ConnectAsync()
-    {        try
+    {        
+        try
         {
             _logger.LogInformation("Attempting to connect to SimConnect");
 
@@ -184,7 +190,9 @@ public class SimConnectManager : ISimConnectManager
         {
             _logger.LogError(ex, "Error during SimConnect disconnect");
         }
-    }    public async Task<bool> StartAsync()
+    }    
+    
+    public async Task<bool> StartAsync()
     {        try
         {
             _logger.LogInformation("Starting SimConnect data collection");
@@ -247,7 +255,8 @@ public class SimConnectManager : ISimConnectManager
     }
 
     protected virtual void Dispose(bool disposing)
-    {        if (!_disposed && disposing)
+    {
+        if (!_disposed && disposing)
         {
             _dataUpdateTimer?.Dispose();
             _connectionMonitorTimer?.Dispose();
@@ -262,13 +271,16 @@ public class SimConnectManager : ISimConnectManager
             }
 
             _disposed = true;
-        }    }
+        }    
+    }
 
     private void DefineDataStructures()
     {
         try
-        {            // Define the data structure for flight data - ensure exact order match with struct
+        {            
+            // Define the data structure for flight data - ensure exact order match with struct
             _simConnect?.AddToDataDefinition(DATA_DEFINITIONS.FlightDataDef, "AIRSPEED INDICATED", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, MSFSSimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DATA_DEFINITIONS.FlightDataDef, "AIRSPEED BARBER POLE", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, MSFSSimConnect.SIMCONNECT_UNUSED);
             _simConnect?.AddToDataDefinition(DATA_DEFINITIONS.FlightDataDef, "PLANE ALTITUDE", "feet", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, MSFSSimConnect.SIMCONNECT_UNUSED);
             _simConnect?.AddToDataDefinition(DATA_DEFINITIONS.FlightDataDef, "VERTICAL SPEED", "feet per second", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, MSFSSimConnect.SIMCONNECT_UNUSED);
             _simConnect?.AddToDataDefinition(DATA_DEFINITIONS.FlightDataDef, "PLANE HEADING DEGREES TRUE", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, MSFSSimConnect.SIMCONNECT_UNUSED);
@@ -297,7 +309,9 @@ public class SimConnectManager : ISimConnectManager
             _logger.LogError(ex, "Failed to define SimConnect data structures");
             throw;
         }
-    }    private void SimConnect_OnRecvOpen(MSFSSimConnect sender, SIMCONNECT_RECV_OPEN data)
+    }    
+    
+    private void SimConnect_OnRecvOpen(MSFSSimConnect sender, SIMCONNECT_RECV_OPEN data)
     {
         _logger.LogInformation("SimConnect connection opened successfully - Application: {AppName}, Version: {Version}", 
             data.szApplicationName, $"{data.dwApplicationVersionMajor}.{data.dwApplicationVersionMinor}.{data.dwApplicationBuildMajor}.{data.dwApplicationBuildMinor}");
@@ -320,7 +334,8 @@ public class SimConnectManager : ISimConnectManager
     private void SimConnect_OnRecvSimobjectData(MSFSSimConnect sender, SIMCONNECT_RECV_SIMOBJECT_DATA data)
     {
         try
-        {            if (data.dwRequestID == (uint)DATA_REQUESTS.FlightDataRequest)
+        {            
+            if (data.dwRequestID == (uint)DATA_REQUESTS.FlightDataRequest)
             {
                 var simData = (SimFlightData)data.dwData[0];
                 
@@ -339,6 +354,7 @@ public class SimConnectManager : ISimConnectManager
                 {
                     Timestamp = DateTime.UtcNow,
                     AirspeedKnots = simData.IndicatedAirspeed,
+                    VNE = simData.BarberPoleAirspeed, // Use Barber Pole as VNE
                     AltitudeFeet = simData.Altitude,
                     VerticalSpeedFpm = simData.VerticalSpeed * 60, // Convert ft/s to ft/min
                     HeadingDegrees = simData.Heading,
@@ -379,7 +395,9 @@ public class SimConnectManager : ISimConnectManager
         {
             _logger.LogError(ex, "Error processing SimConnect data");
         }
-    }    private void PumpMessages(object? state)
+    }    
+    
+    private void PumpMessages(object? state)
     {
         try
         {

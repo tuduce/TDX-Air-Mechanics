@@ -156,11 +156,11 @@ public class ConfigurationManager : IConfigurationManager
     public AppConfiguration CreateDefaultConfiguration()
     {
         return new AppConfiguration
-        {            General = new GeneralSettings
+        {            
+            General = new GeneralSettings
             {
                 StartWithWindows = false,
-                MinimizeToTray = true,
-                CloseToTrayOnExit = true,
+                CloseToTrayOnExit = false,
                 AutoConnect = true,
                 Theme = "Dark",
                 LogLevel = "Information"

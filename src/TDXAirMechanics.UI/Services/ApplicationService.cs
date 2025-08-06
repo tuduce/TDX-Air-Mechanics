@@ -60,7 +60,9 @@ public class ApplicationService : IApplicationService
         }
     }
 
-    public event EventHandler<ApplicationStatusEventArgs>? StatusChanged;    public async Task StartAsync()
+    public event EventHandler<ApplicationStatusEventArgs>? StatusChanged;    
+    
+    public async Task StartAsync()
     {
         _logger.LogInformation("Starting TDX Air Mechanics application services");
         
@@ -94,7 +96,9 @@ public class ApplicationService : IApplicationService
             OnStatusChanged($"Failed to start: {ex.Message}", StatusLevel.Error);
             throw;
         }
-    }public async Task StopAsync()
+    }
+    
+    public async Task StopAsync()
     {
         _logger.LogInformation("Stopping TDX Air Mechanics application services");
         
@@ -121,7 +125,9 @@ public class ApplicationService : IApplicationService
             _logger.LogError(ex, "Error stopping application services");
             OnStatusChanged($"Error stopping: {ex.Message}", StatusLevel.Error);
         }
-    }    private void OnFlightDataReceived(object? sender, FlightData flightData)
+    }    
+    
+    private void OnFlightDataReceived(object? sender, FlightData flightData)
     {
         _currentFlightData = flightData;
         
@@ -150,7 +156,7 @@ public class ApplicationService : IApplicationService
                 {
                     try
                     {
-                        await _directInputManager.ApplyForceAsync(_currentForces);
+                        // await _directInputManager.ApplyForceAsync(_currentForces);
                     }
                     catch (Exception ex)
                     {
@@ -163,7 +169,9 @@ public class ApplicationService : IApplicationService
                 _logger.LogError(ex, "Error calculating forces");
             }
         }
-    }    public void SetForceMultiplier(int multiplier)
+    }    
+    
+    public void SetForceMultiplier(int multiplier)
     {
         _forceMultiplier = Math.Max(0, Math.Min(200, multiplier)); // Clamp between 0-200%
         _logger.LogInformation("Setting force multiplier to {Multiplier}%", _forceMultiplier);
@@ -179,7 +187,9 @@ public class ApplicationService : IApplicationService
             // Stop all effects when disabled
             Task.Run(async () => await _directInputManager.StopAllEffectsAsync());
         }
-    }    public async Task<List<string>> GetAvailableDevicesAsync()
+    }    
+    
+    public async Task<List<string>> GetAvailableDevicesAsync()
     {
         _logger.LogInformation("Getting available joystick devices");
         
@@ -198,7 +208,9 @@ public class ApplicationService : IApplicationService
         }
         
         return new List<string> { "DirectInput manager not available" };
-    }    public async Task SelectDeviceAsync(string deviceName)
+    }
+    
+    public async Task SelectDeviceAsync(string deviceName)
     {
         await SelectDeviceAsync(deviceName, IntPtr.Zero);
     }

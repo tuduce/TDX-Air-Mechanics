@@ -35,7 +35,9 @@ public interface IApplicationService
     /// <summary>
     /// Get current flight data
     /// </summary>
-    FlightData? CurrentFlightData { get; }    /// <summary>
+    FlightData? CurrentFlightData { get; }    
+    
+    /// <summary>
     /// Get current force feedback data
     /// </summary>
     ForceFeedbackData? CurrentForces { get; }
@@ -56,7 +58,9 @@ public interface IApplicationService
     /// Get available joystick devices
     /// </summary>
     /// <returns>List of available device names</returns>
-    Task<List<string>> GetAvailableDevicesAsync();    /// <summary>
+    Task<List<string>> GetAvailableDevicesAsync();    
+    
+    /// <summary>
     /// Select a joystick device for force feedback
     /// </summary>
     /// <param name="deviceName">Name of the device to select</param>

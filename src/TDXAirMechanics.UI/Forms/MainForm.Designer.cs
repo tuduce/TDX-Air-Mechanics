@@ -50,6 +50,8 @@ namespace TDXAirMechanics.UI.Forms
             materialCardJoystick = new MaterialSkin.Controls.MaterialCard();
             pictureBoxJoystick = new PictureBox();
             tabPageEffects = new TabPage();
+            switchShakeOnStallWarning = new MaterialSkin.Controls.MaterialSwitch();
+            switchDynamicControlForces = new MaterialSkin.Controls.MaterialSwitch();
             tabPageDevice = new TabPage();
             tabPageSettings = new TabPage();
             iconsList = new ImageList(components);
@@ -60,6 +62,7 @@ namespace TDXAirMechanics.UI.Forms
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             materialCardJoystick.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxJoystick).BeginInit();
+            tabPageEffects.SuspendLayout();
             tabPageDevice.SuspendLayout();
             tabPageSettings.SuspendLayout();
             SuspendLayout();
@@ -381,6 +384,9 @@ namespace TDXAirMechanics.UI.Forms
             // 
             // tabPageEffects
             // 
+            tabPageEffects.BackColor = Color.LightGray;
+            tabPageEffects.Controls.Add(switchShakeOnStallWarning);
+            tabPageEffects.Controls.Add(switchDynamicControlForces);
             tabPageEffects.ImageKey = "icons8-depth-effect-48.png";
             tabPageEffects.Location = new Point(4, 39);
             tabPageEffects.Name = "tabPageEffects";
@@ -388,7 +394,38 @@ namespace TDXAirMechanics.UI.Forms
             tabPageEffects.Size = new Size(921, 630);
             tabPageEffects.TabIndex = 1;
             tabPageEffects.Text = "Effects";
-            tabPageEffects.UseVisualStyleBackColor = true;
+            // 
+            // switchShakeOnStallWarning
+            // 
+            switchShakeOnStallWarning.AutoSize = true;
+            switchShakeOnStallWarning.Depth = 0;
+            switchShakeOnStallWarning.Location = new Point(20, 52);
+            switchShakeOnStallWarning.Margin = new Padding(0);
+            switchShakeOnStallWarning.MouseLocation = new Point(-1, -1);
+            switchShakeOnStallWarning.MouseState = MaterialSkin.MouseState.HOVER;
+            switchShakeOnStallWarning.Name = "switchShakeOnStallWarning";
+            switchShakeOnStallWarning.Ripple = true;
+            switchShakeOnStallWarning.Size = new Size(256, 37);
+            switchShakeOnStallWarning.TabIndex = 1;
+            switchShakeOnStallWarning.Text = "Shake stick on stall warning";
+            switchShakeOnStallWarning.UseVisualStyleBackColor = true;
+            // 
+            // switchDynamicControlForces
+            // 
+            switchDynamicControlForces.AutoSize = true;
+            switchDynamicControlForces.Checked = true;
+            switchDynamicControlForces.CheckState = CheckState.Checked;
+            switchDynamicControlForces.Depth = 0;
+            switchDynamicControlForces.Location = new Point(20, 15);
+            switchDynamicControlForces.Margin = new Padding(0);
+            switchDynamicControlForces.MouseLocation = new Point(-1, -1);
+            switchDynamicControlForces.MouseState = MaterialSkin.MouseState.HOVER;
+            switchDynamicControlForces.Name = "switchDynamicControlForces";
+            switchDynamicControlForces.Ripple = true;
+            switchDynamicControlForces.Size = new Size(272, 37);
+            switchDynamicControlForces.TabIndex = 0;
+            switchDynamicControlForces.Text = "Enable dynamic control forces";
+            switchDynamicControlForces.UseVisualStyleBackColor = true;
             // 
             // tabPageDevice
             // 
@@ -452,6 +489,8 @@ namespace TDXAirMechanics.UI.Forms
             materialCardJoystick.ResumeLayout(false);
             materialCardJoystick.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBoxJoystick).EndInit();
+            tabPageEffects.ResumeLayout(false);
+            tabPageEffects.PerformLayout();
             tabPageDevice.ResumeLayout(false);
             tabPageSettings.ResumeLayout(false);
             tabPageSettings.PerformLayout();
@@ -491,5 +530,7 @@ private ListBox joystickListBox;
         private MaterialSkin.Controls.MaterialCard materialCardSimulator;
         private PictureBox pictureBox1;
         private MaterialSkin.Controls.MaterialLabel matLabelMSFSConnected;
+        private MaterialSkin.Controls.MaterialSwitch switchDynamicControlForces;
+        private MaterialSkin.Controls.MaterialSwitch switchShakeOnStallWarning;
     }
 }

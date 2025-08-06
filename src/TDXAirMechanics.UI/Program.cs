@@ -78,7 +78,9 @@ internal static class Program
                 // Register core services
                 ConfigureServices(services);
             });
-    }    /// <summary>
+    }    
+    
+    /// <summary>
     /// Configure dependency injection services
     /// </summary>
     /// <param name="services">Service collection</param>

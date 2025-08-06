@@ -62,6 +62,7 @@ public partial class MainForm : MaterialForm
         {
             // Icon loading failed - application will use default icon
         }
+
         InitializeUI();
 
         // Setup update timer
@@ -72,6 +73,37 @@ public partial class MainForm : MaterialForm
 
         // Subscribe to status changes
         _statusService.StatusChanged += OnStatusChanged;
+
+        // Attach OnLoad event for config loading
+        this.Load += MainForm_Load;
+    }
+
+    private async void MainForm_Load(object? sender, EventArgs e)
+    {
+        await LoadConfiguration();
+        // Attach the event handler only after config is loaded and checkbox is set
+        closeToTrayCheckBox.CheckedChanged += CloseToTrayCheckBox_CheckedChanged;
+    }
+
+    private async Task LoadConfiguration()
+    {
+        try
+        {
+            var config = await _configurationManager.LoadConfigurationAsync();
+            _closeToTrayOnExit = config.General.CloseToTrayOnExit;
+            closeToTrayCheckBox.CheckedChanged -= CloseToTrayCheckBox_CheckedChanged;
+            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
+            // Do not re-attach here, only attach in MainForm_Load
+            _logger.LogInformation("Configuration loaded: CloseToTrayOnExit = {CloseToTrayOnExit}", _closeToTrayOnExit);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load configuration, using default settings");
+            _closeToTrayOnExit = true; // Default fallback
+            closeToTrayCheckBox.CheckedChanged -= CloseToTrayCheckBox_CheckedChanged;
+            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
+            // Do not re-attach here, only attach in MainForm_Load
+        }
     }
 
     private void SetPictureBoxJoystickIconColor(Color color)
@@ -116,9 +148,6 @@ public partial class MainForm : MaterialForm
     {
         _logger.LogInformation("Initializing main form UI");
 
-        // Load configuration
-        LoadConfiguration();
-
         // Setup system tray icon
         SetupSystemTray();
 
@@ -139,7 +168,7 @@ public partial class MainForm : MaterialForm
         enableForceFeedbackCheckBox.CheckedChanged += EnableForceFeedbackCheckBox_CheckedChanged;
 
         // General settings events
-        closeToTrayCheckBox.CheckedChanged += CloseToTrayCheckBox_CheckedChanged;
+        // closeToTrayCheckBox.CheckedChanged += CloseToTrayCheckBox_CheckedChanged; // REMOVE THIS LINE
 
         // Tab control events
         mainTabControl.SelectedIndexChanged += MainTabControl_SelectedIndexChanged;
@@ -181,26 +210,6 @@ public partial class MainForm : MaterialForm
         Application.Exit();
     }
 
-    private async void LoadConfiguration()
-    {
-        try
-        {
-            var config = await _configurationManager.LoadConfigurationAsync();
-            _closeToTrayOnExit = config.General.CloseToTrayOnExit;
-            
-            // Update UI to reflect loaded configuration
-            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
-            
-            _logger.LogInformation("Configuration loaded: CloseToTrayOnExit = {CloseToTrayOnExit}", _closeToTrayOnExit);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to load configuration, using default settings");
-            _closeToTrayOnExit = true; // Default fallback
-            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
-        }
-    }
-
     private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
         // Check user preference for close behavior
@@ -220,6 +229,25 @@ public partial class MainForm : MaterialForm
                 // Close the application completely
                 ExitApplication();
             }
+        }
+    }
+
+    private async void CloseToTrayCheckBox_CheckedChanged(object? sender, EventArgs e)
+    {
+        try
+        {
+            _closeToTrayOnExit = closeToTrayCheckBox.Checked;
+            // Save the configuration with the new setting
+            var config = await _configurationManager.LoadConfigurationAsync();
+            config.General.CloseToTrayOnExit = _closeToTrayOnExit;
+            await _configurationManager.SaveConfigurationAsync(config);
+            _logger.LogInformation("Close to tray setting changed to: {CloseToTrayOnExit}", _closeToTrayOnExit);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save close to tray setting");
+            // Revert the checkbox state if save failed
+            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
         }
     }
 
@@ -298,27 +326,6 @@ public partial class MainForm : MaterialForm
         var enabled = enableForceFeedbackCheckBox.Checked;
         _applicationService.SetForceFeedbackEnabled(enabled);
         _logger.LogInformation("Force feedback {Status}", enabled ? "enabled" : "disabled");
-    }
-
-    private async void CloseToTrayCheckBox_CheckedChanged(object? sender, EventArgs e)
-    {
-        try
-        {
-            _closeToTrayOnExit = closeToTrayCheckBox.Checked;
-            
-            // Save the configuration with the new setting
-            var config = await _configurationManager.LoadConfigurationAsync();
-            config.General.CloseToTrayOnExit = _closeToTrayOnExit;
-            await _configurationManager.SaveConfigurationAsync(config);
-            
-            _logger.LogInformation("Close to tray setting changed to: {CloseToTrayOnExit}", _closeToTrayOnExit);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to save close to tray setting");
-            // Revert the checkbox state if save failed
-            closeToTrayCheckBox.Checked = _closeToTrayOnExit;
-        }
     }
 
     private async void MainTabControl_SelectedIndexChanged(object? sender, EventArgs e)
@@ -434,8 +441,8 @@ public partial class MainForm : MaterialForm
             {
                 connectButton.Enabled = false;
                 disconnectButton.Enabled = true;
-                MessageBox.Show("Connected to flight simulator successfully!", "Connection Successful", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                //MessageBox.Show("Connected to flight simulator successfully!", "Connection Successful", 
+                //    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
@@ -470,8 +477,8 @@ public partial class MainForm : MaterialForm
             disconnectButton.Enabled = false;
             disconnectButton.Text = "Disconnect";
             
-            MessageBox.Show("Disconnected from flight simulator.", "Disconnected", 
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            //MessageBox.Show("Disconnected from flight simulator.", "Disconnected", 
+            //    MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {

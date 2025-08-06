@@ -36,7 +36,9 @@ public class DirectInputManager : IDirectInputManager
     public event EventHandler<bool>? JoystickConnectionChanged;
 
     public bool IsJoystickConnected => _joystick != null && _connectedJoystick != null;
-    public JoystickInfo? ConnectedJoystick => _connectedJoystick;    public async Task<bool> InitializeAsync()
+    public JoystickInfo? ConnectedJoystick => _connectedJoystick;    
+    
+    public async Task<bool> InitializeAsync()
     {
         try
         {
@@ -65,42 +67,6 @@ public class DirectInputManager : IDirectInputManager
         }
     }
 
-    public async Task<bool> ApplyForceAsync(ForceFeedbackData forceData)
-    {
-        if (_joystick == null || !IsJoystickConnected)
-        {
-            return false;
-        }
-
-        try
-        {
-            await Task.Run(() =>
-            {
-                // Clamp forces to safety limits
-                forceData.ClampForces();
-                var safeForceX = forceData.ForceX * SAFETY_LIMIT;
-                var safeForceY = forceData.ForceY * SAFETY_LIMIT;
-
-                // Convert to DirectInput force values
-                var diForceX = (int)(safeForceX * DI_FORCE_MAX);
-                var diForceY = (int)(safeForceY * DI_FORCE_MAX);
-
-                // TODO: Apply actual force effects using SharpDX
-                // This is a placeholder implementation
-                
-                _logger.LogDebug("Applied force: X={ForceX:F3}, Y={ForceY:F3}", 
-                    safeForceX, safeForceY);
-            });
-            
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to apply force feedback");
-            return false;
-        }
-    }
-
     public async Task<bool> ApplyEffectAsync(ForceFeedbackEffect effect)
     {
         if (_joystick == null || !IsJoystickConnected)
@@ -120,7 +86,8 @@ public class DirectInputManager : IDirectInputManager
                         double centerX = effect.Parameters.TryGetValue("CenterX", out var cx) ? Convert.ToDouble(cx) : 0.0;
                         double centerY = effect.Parameters.TryGetValue("CenterY", out var cy) ? Convert.ToDouble(cy) : 0.0;
                         // TODO: Implement actual spring effect using SharpDX
-                        _logger.LogDebug($"[Spring Effect] Strength={{strength:F2}}, CenterX={{centerX}}, CenterY={{centerY}} (Duration: {{effect.DurationMs}} ms)");
+                        _logger.LogDebug($"[Spring Effect] Strength={{strength:F2}}, CenterX={{centerX}}, CenterY={{centerY}} (Duration: {{effect.DurationMs}} ms)",
+                            strength, centerX, centerY, effect.DurationMs);
                         break;
                     default:
                         _logger.LogWarning($"Effect type {effect.EffectType} not implemented");

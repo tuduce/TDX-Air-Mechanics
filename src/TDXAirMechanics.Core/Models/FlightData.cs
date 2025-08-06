@@ -11,6 +11,11 @@ public class FlightData
     public double AirspeedKnots { get; set; }
 
     /// <summary>
+    /// Velocity Never Exceed (barber pole speed)
+    /// </summary>
+    public double VNE { get; set; }
+
+    /// <summary>
     /// Aircraft altitude in feet
     /// </summary>
     public double AltitudeFeet { get; set; }
