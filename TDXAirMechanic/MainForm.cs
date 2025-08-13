@@ -8,6 +8,7 @@ namespace TDXAirMechanic
     public partial class MainForm : MaterialForm
     {
         private SimConnectService? _simConnectService;
+        private MechanicServices? _mechanicServices;
         private readonly CancellationTokenSource _formClosingCts = new CancellationTokenSource();
 
         private bool _isSimConnectClicked = false;
@@ -27,12 +28,27 @@ namespace TDXAirMechanic
                 TextShade.WHITE);
 
             _simConnectService = new SimConnectService();
+            _mechanicServices = new MechanicServices();
+        }
+
+        // MainForm_Load is called when the form is loaded
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            // Initialize the mechanic services
+            var progress = new Progress<MechanicProgress>(data =>
+            {
+                // This code is guaranteed to run on the UI thread!
+                labelJoystickStatus.Text = data.Status;
+                comboBoxJoysticks.DataSource = data.Joysticks;
+            });
+            _mechanicServices?.Start(progress);
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             // Cleanly stop the background thread on form close
             _simConnectService?.Dispose();
+            _mechanicServices?.Dispose();
         }
 
         private void buttonConnectSimulator_Click(object sender, EventArgs e)
@@ -63,6 +79,11 @@ namespace TDXAirMechanic
                 _simConnectService?.Dispose();
                 _simConnectService = null; // Set to null to allow reconnection
             }
+        }
+
+        private void buttonRefresh_Click(object sender, EventArgs e)
+        {
+            _mechanicServices?.LoadJoysticks();
         }
     }
 }

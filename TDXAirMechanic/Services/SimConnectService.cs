@@ -16,15 +16,15 @@ namespace TDXAirMechanic.Services
     {
         private const int WM_USER_SIMCONNECT = 0x0402;
 
-        private SimConnect _simConnect;
-        private CancellationTokenSource _cts;
-        private Task _simConnectTask;
+        private SimConnect? _simConnect;
+        private CancellationTokenSource? _cts;
+        private Task? _simConnectTask;
 
         // Thread-safe queue for commands from the UI thread
-        private readonly ConcurrentQueue<SimCommand> _commandQueue = new ConcurrentQueue<SimCommand>();
+        private readonly ConcurrentQueue<SimCommand> _commandQueue = new();
 
         // This will be used to report data back to the UI thread safely
-        private IProgress<AirplaneProfile> _progressReporter;
+        private IProgress<AirplaneProfile>? _progressReporter;
 
         // A flag to detect redundant calls to Dispose
         private bool _disposed = false;
@@ -64,35 +64,29 @@ namespace TDXAirMechanic.Services
         private void ProcessSimConnectMessages(IntPtr windowHandle, CancellationToken token)
         {
             try
-            {
-                // Create a hidden window to receive SimConnect messages
-                using (var messageWindow = new MessageWindow())
+            { 
+                _simConnect = new SimConnect("TDX Air Mechanic", windowHandle, WM_USER_SIMCONNECT, null, 0);
+
+                // --- Setup Event Handlers ---
+                _simConnect.OnRecvOpen += OnRecvOpen;
+                _simConnect.OnRecvQuit += OnRecvQuit;
+                _simConnect.OnRecvException += OnRecvException;
+                _simConnect.OnRecvSimobjectData += OnRecvSimobjectData;
+
+                // --- Main Loop ---
+                while (!token.IsCancellationRequested)
                 {
-                    messageWindow.CreateHandle(new CreateParams());
-
-                    _simConnect = new SimConnect("My SimConnect App", messageWindow.Handle, WM_USER_SIMCONNECT, null, 0);
-
-                    // --- Setup Event Handlers ---
-                    _simConnect.OnRecvOpen += OnRecvOpen;
-                    _simConnect.OnRecvQuit += OnRecvQuit;
-                    _simConnect.OnRecvException += OnRecvException;
-                    _simConnect.OnRecvSimobjectData += OnRecvSimobjectData;
-
-                    // --- Main Loop ---
-                    while (!token.IsCancellationRequested)
+                    // Process any commands from the UI thread
+                    while (_commandQueue.TryDequeue(out var command))
                     {
-                        // Process any commands from the UI thread
-                        while (_commandQueue.TryDequeue(out var command))
-                        {
-                            ProcessCommand(command);
-                        }
-
-                        // Let SimConnect process its messages
-                        _simConnect?.ReceiveMessage();
-
-                        // Small delay to prevent a tight loop from consuming 100% CPU
-                        Thread.Sleep(50);
+                        ProcessCommand(command);
                     }
+
+                    // Let SimConnect process its messages
+                    _simConnect?.ReceiveMessage();
+
+                    // Small delay to prevent a tight loop from consuming 100% CPU
+                    Thread.Sleep(50);
                 }
             }
             catch (Exception ex)
