@@ -189,9 +189,9 @@ namespace TDXAirMechanic.Services
 
         private void ProcessSimData(SimVariableData data)
         {
-            // TODO: Implement actual mechanic logic reacting to sim variables and current profile
+            // TODO: Coordinate effect creation with the selection of the joystick
+            // and the active profile
             var profileInfo = _activeProfile is null ? "(no profile)" : $"Centered={_activeProfile.CenteredSpring}, Dynamic={_activeProfile.DynamicSpring}, Shaker={_activeProfile.StickShaker}";
-            // Debug.WriteLine($"[Mechanic] Model={data.Title}, Alt={data.IndicatedAltitude}, IAS={data.IndicatedAirspeed}, Profile={profileInfo}");
 
             // If we have a centered spring effect, apply it
             if (_activeProfile?.CenteredSpring == true && 
