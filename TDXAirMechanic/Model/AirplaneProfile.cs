@@ -10,5 +10,9 @@ namespace TDXAirMechanic.Model
     {
         public string Model { get; set; } = "";
 
+        // Effects profile (per-aircraft)
+        public bool CenteredSpring { get; set; }
+        public bool DynamicSpring { get; set; }
+        public bool StickShaker { get; set; }
     }
 }

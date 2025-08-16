@@ -43,6 +43,13 @@ namespace TDXAirMechanic.Services
             public double indicated_airspeed;
         }
 
+        private readonly MechanicService _mechanicService;
+
+        public SimConnectService(MechanicService mechanicService)
+        {
+            _mechanicService = mechanicService;
+        }
+
         public void Start(IProgress<AirplaneProfile> progress, IntPtr windowHandle)
         {
             if (_simConnectTask != null) return; // Already running
@@ -53,6 +60,33 @@ namespace TDXAirMechanic.Services
             // Use Task.Run to start the SimConnect logic on a background thread
             _simConnectTask = Task.Run(() => ProcessSimConnectMessages(windowHandle, _cts.Token));
 
+        }
+
+        public void Stop()
+        {
+            if (_simConnectTask == null)
+                return;
+
+            try
+            {
+                _cts?.Cancel();
+                try
+                {
+                    _simConnectTask.Wait();
+                }
+                catch (AggregateException ex)
+                {
+                    ex.Handle(e => e is OperationCanceledException);
+                }
+            }
+            finally
+            {
+                _cts?.Dispose();
+                _cts = null;
+                _simConnectTask?.Dispose();
+                _simConnectTask = null;
+                Disconnect();
+            }
         }
 
         // This method is called by the UI thread to send a command
@@ -123,14 +157,14 @@ namespace TDXAirMechanic.Services
             Debug.WriteLine("SimConnect connection opened.");
 
             // --- Register Data Definitions ---
-            _simConnect.AddToDataDefinition(DEFINITIONS.Struct1, "TITLE", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-            _simConnect.AddToDataDefinition(DEFINITIONS.Struct1, "INDICATED ALTITUDE", "feet", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-            _simConnect.AddToDataDefinition(DEFINITIONS.Struct1, "AIRSPEED INDICATED", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.Struct1, "TITLE", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.Struct1, "INDICATED ALTITUDE", "feet", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.Struct1, "AIRSPEED INDICATED", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
 
-            _simConnect.RegisterDataDefineStruct<SimResponse>(DEFINITIONS.Struct1);
+            _simConnect?.RegisterDataDefineStruct<SimResponse>(DEFINITIONS.Struct1);
 
             // Request data every second
-            _simConnect.RequestDataOnSimObject(DATA_REQUESTS.Request1, DEFINITIONS.Struct1, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, 0, 0, 0, 0);
+            _simConnect?.RequestDataOnSimObject(DATA_REQUESTS.Request1, DEFINITIONS.Struct1, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, 0, 0, 0, 0);
         }
 
         private void OnRecvSimobjectData(SimConnect sender, SIMCONNECT_RECV_SIMOBJECT_DATA data)
@@ -144,6 +178,14 @@ namespace TDXAirMechanic.Services
                 { 
                     Model = simResponse.title 
                 };
+
+                // Also enqueue raw sim variables for MechanicService to react on
+                _mechanicService.TryEnqueueSimData(new SimVariableData
+                {
+                    Title = simResponse.title,
+                    IndicatedAltitude = simResponse.indicated_altitude,
+                    IndicatedAirspeed = simResponse.indicated_airspeed
+                });
 
                 // Report progress, which will safely update the UI on the UI thread
                 _progressReporter?.Report(uiData);
@@ -201,30 +243,11 @@ namespace TDXAirMechanic.Services
 
             if (disposing)
             {
-                // --- This is the key part ---
-                // 1. Signal the background task to stop
-                _cts?.Cancel();
-
-                // 2. Wait for the task to complete its current loop and exit gracefully
-                try
-                {
-                    _simConnectTask?.Wait();
-                }
-                catch (AggregateException ex)
-                {
-                    // Handle exceptions that might occur when waiting for the task
-                    ex.Handle(e => e is OperationCanceledException);
-                }
-
-                // 3. Dispose of managed resources
-                _cts?.Dispose();
-                _simConnectTask?.Dispose();
+                // Cleanly stop background task and disconnect
+                Stop();
             }
 
-            // 4. Disconnect and clean up unmanaged SimConnect resources
-            Disconnect();
-
-            // 5. Mark that this object has been disposed.
+            // Mark that this object has been disposed.
             _disposed = true;
         }
 

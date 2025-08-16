@@ -33,20 +33,24 @@
             materialTabControl1 = new MaterialSkin.Controls.MaterialTabControl();
             tabPageDashboard = new TabPage();
             materialCard2 = new MaterialSkin.Controls.MaterialCard();
-            labelJoystickStatus = new MaterialSkin.Controls.MaterialLabel();
             buttonConnectSimulator = new MaterialSkin.Controls.MaterialFloatingActionButton();
             imageListIcons = new ImageList(components);
             materialCard1 = new MaterialSkin.Controls.MaterialCard();
+            labelJoystickStatus = new MaterialSkin.Controls.MaterialLabel();
             labelAircraftName = new MaterialSkin.Controls.MaterialLabel();
             tabPageEffects = new TabPage();
+            switchStickShaker = new MaterialSkin.Controls.MaterialSwitch();
+            switchDynamicSpring = new MaterialSkin.Controls.MaterialSwitch();
+            switchCenterSpring = new MaterialSkin.Controls.MaterialSwitch();
             tabPageDevices = new TabPage();
+            textJoystickInfo = new MaterialSkin.Controls.MaterialMultiLineTextBox();
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
             comboBoxJoysticks = new MaterialSkin.Controls.MaterialComboBox();
             tabPageSettings = new TabPage();
             materialTabControl1.SuspendLayout();
             tabPageDashboard.SuspendLayout();
-            materialCard2.SuspendLayout();
             materialCard1.SuspendLayout();
+            tabPageEffects.SuspendLayout();
             tabPageDevices.SuspendLayout();
             SuspendLayout();
             // 
@@ -84,7 +88,6 @@
             // materialCard2
             // 
             materialCard2.BackColor = Color.FromArgb(255, 255, 255);
-            materialCard2.Controls.Add(labelJoystickStatus);
             materialCard2.Depth = 0;
             materialCard2.ForeColor = Color.FromArgb(222, 0, 0, 0);
             materialCard2.Location = new Point(17, 104);
@@ -94,18 +97,6 @@
             materialCard2.Padding = new Padding(14);
             materialCard2.Size = new Size(310, 76);
             materialCard2.TabIndex = 2;
-            // 
-            // labelJoystickStatus
-            // 
-            labelJoystickStatus.AutoSize = true;
-            labelJoystickStatus.Depth = 0;
-            labelJoystickStatus.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            labelJoystickStatus.Location = new Point(17, 14);
-            labelJoystickStatus.MouseState = MaterialSkin.MouseState.HOVER;
-            labelJoystickStatus.Name = "labelJoystickStatus";
-            labelJoystickStatus.Size = new Size(141, 19);
-            labelJoystickStatus.TabIndex = 0;
-            labelJoystickStatus.Text = "No joystick selected";
             // 
             // buttonConnectSimulator
             // 
@@ -135,6 +126,7 @@
             // materialCard1
             // 
             materialCard1.BackColor = Color.FromArgb(255, 255, 255);
+            materialCard1.Controls.Add(labelJoystickStatus);
             materialCard1.Controls.Add(labelAircraftName);
             materialCard1.Depth = 0;
             materialCard1.ForeColor = Color.FromArgb(222, 0, 0, 0);
@@ -145,6 +137,18 @@
             materialCard1.Padding = new Padding(14);
             materialCard1.Size = new Size(310, 76);
             materialCard1.TabIndex = 0;
+            // 
+            // labelJoystickStatus
+            // 
+            labelJoystickStatus.AutoSize = true;
+            labelJoystickStatus.Depth = 0;
+            labelJoystickStatus.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            labelJoystickStatus.Location = new Point(17, 43);
+            labelJoystickStatus.MouseState = MaterialSkin.MouseState.HOVER;
+            labelJoystickStatus.Name = "labelJoystickStatus";
+            labelJoystickStatus.Size = new Size(141, 19);
+            labelJoystickStatus.TabIndex = 0;
+            labelJoystickStatus.Text = "No joystick selected";
             // 
             // labelAircraftName
             // 
@@ -161,6 +165,9 @@
             // 
             // tabPageEffects
             // 
+            tabPageEffects.Controls.Add(switchStickShaker);
+            tabPageEffects.Controls.Add(switchDynamicSpring);
+            tabPageEffects.Controls.Add(switchCenterSpring);
             tabPageEffects.ImageKey = "icons8-depth-effect-48.png";
             tabPageEffects.Location = new Point(4, 39);
             tabPageEffects.Name = "tabPageEffects";
@@ -170,8 +177,61 @@
             tabPageEffects.Text = "Effects";
             tabPageEffects.UseVisualStyleBackColor = true;
             // 
+            // switchStickShaker
+            // 
+            switchStickShaker.AutoSize = true;
+            switchStickShaker.Checked = true;
+            switchStickShaker.CheckState = CheckState.Checked;
+            switchStickShaker.Depth = 0;
+            switchStickShaker.Location = new Point(13, 105);
+            switchStickShaker.Margin = new Padding(0);
+            switchStickShaker.MouseLocation = new Point(-1, -1);
+            switchStickShaker.MouseState = MaterialSkin.MouseState.HOVER;
+            switchStickShaker.Name = "switchStickShaker";
+            switchStickShaker.Ripple = true;
+            switchStickShaker.Size = new Size(144, 37);
+            switchStickShaker.TabIndex = 2;
+            switchStickShaker.Text = "Stick shaker";
+            switchStickShaker.UseVisualStyleBackColor = true;
+            // 
+            // switchDynamicSpring
+            // 
+            switchDynamicSpring.AutoSize = true;
+            switchDynamicSpring.Depth = 0;
+            switchDynamicSpring.Location = new Point(63, 59);
+            switchDynamicSpring.Margin = new Padding(0);
+            switchDynamicSpring.MouseLocation = new Point(-1, -1);
+            switchDynamicSpring.MouseState = MaterialSkin.MouseState.HOVER;
+            switchDynamicSpring.Name = "switchDynamicSpring";
+            switchDynamicSpring.Ripple = true;
+            switchDynamicSpring.Size = new Size(209, 37);
+            switchDynamicSpring.TabIndex = 1;
+            switchDynamicSpring.Text = "Dynamic spring force";
+            switchDynamicSpring.UseVisualStyleBackColor = true;
+            // 
+            // switchCenterSpring
+            // 
+            switchCenterSpring.AutoSize = true;
+            switchCenterSpring.BackColor = Color.Transparent;
+            switchCenterSpring.BackgroundImageLayout = ImageLayout.None;
+            switchCenterSpring.Checked = true;
+            switchCenterSpring.CheckState = CheckState.Checked;
+            switchCenterSpring.Depth = 0;
+            switchCenterSpring.Location = new Point(13, 13);
+            switchCenterSpring.Margin = new Padding(0);
+            switchCenterSpring.MouseLocation = new Point(-1, -1);
+            switchCenterSpring.MouseState = MaterialSkin.MouseState.HOVER;
+            switchCenterSpring.Name = "switchCenterSpring";
+            switchCenterSpring.Ripple = true;
+            switchCenterSpring.Size = new Size(168, 37);
+            switchCenterSpring.TabIndex = 0;
+            switchCenterSpring.Text = "Centered spring";
+            switchCenterSpring.UseVisualStyleBackColor = false;
+            switchCenterSpring.CheckedChanged += switchCenterSpring_CheckedChanged;
+            // 
             // tabPageDevices
             // 
+            tabPageDevices.Controls.Add(textJoystickInfo);
             tabPageDevices.Controls.Add(buttonRefresh);
             tabPageDevices.Controls.Add(comboBoxJoysticks);
             tabPageDevices.ImageKey = "icons8-joystick-48.png";
@@ -181,6 +241,21 @@
             tabPageDevices.TabIndex = 2;
             tabPageDevices.Text = "Devices";
             tabPageDevices.UseVisualStyleBackColor = true;
+            // 
+            // textJoystickInfo
+            // 
+            textJoystickInfo.BackColor = Color.FromArgb(255, 255, 255);
+            textJoystickInfo.BorderStyle = BorderStyle.None;
+            textJoystickInfo.Depth = 0;
+            textJoystickInfo.Font = new Font("Microsoft Sans Serif", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            textJoystickInfo.ForeColor = Color.FromArgb(222, 0, 0, 0);
+            textJoystickInfo.Location = new Point(17, 86);
+            textJoystickInfo.MouseState = MaterialSkin.MouseState.HOVER;
+            textJoystickInfo.Name = "textJoystickInfo";
+            textJoystickInfo.ReadOnly = true;
+            textJoystickInfo.Size = new Size(405, 175);
+            textJoystickInfo.TabIndex = 2;
+            textJoystickInfo.Text = "";
             // 
             // buttonRefresh
             // 
@@ -246,12 +321,13 @@
             Text = "TDX Air Mechanic";
             FormClosing += MainForm_FormClosing;
             Load += MainForm_Load;
+            Shown += MainForm_Shown;
             materialTabControl1.ResumeLayout(false);
             tabPageDashboard.ResumeLayout(false);
-            materialCard2.ResumeLayout(false);
-            materialCard2.PerformLayout();
             materialCard1.ResumeLayout(false);
             materialCard1.PerformLayout();
+            tabPageEffects.ResumeLayout(false);
+            tabPageEffects.PerformLayout();
             tabPageDevices.ResumeLayout(false);
             tabPageDevices.PerformLayout();
             ResumeLayout(false);
@@ -272,5 +348,9 @@
         private MaterialSkin.Controls.MaterialComboBox comboBoxJoysticks;
         private MaterialSkin.Controls.MaterialCard materialCard2;
         private MaterialSkin.Controls.MaterialLabel labelJoystickStatus;
+        private MaterialSkin.Controls.MaterialSwitch switchCenterSpring;
+        private MaterialSkin.Controls.MaterialSwitch switchDynamicSpring;
+        private MaterialSkin.Controls.MaterialSwitch switchStickShaker;
+        private MaterialSkin.Controls.MaterialMultiLineTextBox textJoystickInfo;
     }
 }
