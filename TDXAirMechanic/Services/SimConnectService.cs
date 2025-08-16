@@ -30,8 +30,8 @@ namespace TDXAirMechanic.Services
         private bool _disposed = false;
 
         // Define data requests and definitions
-        private enum DEFINITIONS { Struct1 }
-        private enum DATA_REQUESTS { Request1 }
+        private enum DEFINITIONS { BasicInfo }
+        private enum DATA_REQUESTS { RequestBasicInfo }
 
         // This is the structure that will be sent to SimConnect
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Ansi, Pack = 1)]
@@ -39,8 +39,13 @@ namespace TDXAirMechanic.Services
         {
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
             public string title;
-            public double indicated_altitude;
-            public double indicated_airspeed;
+            public double ias;
+            public double barber;
+            public double throttle;
+            public double stallWarning;
+            public double onGround;
+            public double groundType;
+            public double groundSpeed;
         }
 
         private readonly MechanicService _mechanicService;
@@ -157,19 +162,24 @@ namespace TDXAirMechanic.Services
             Debug.WriteLine("SimConnect connection opened.");
 
             // --- Register Data Definitions ---
-            _simConnect?.AddToDataDefinition(DEFINITIONS.Struct1, "TITLE", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-            _simConnect?.AddToDataDefinition(DEFINITIONS.Struct1, "INDICATED ALTITUDE", "feet", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-            _simConnect?.AddToDataDefinition(DEFINITIONS.Struct1, "AIRSPEED INDICATED", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "TITLE", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "AIRSPEED INDICATED", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "AIRSPEED BARBER POLE", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "GENERAL ENG THROTTLE LEVER POSITION:1", "percent", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "STALL WARNING", "Boolean", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "SIM ON GROUND", "Boolean", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "SURFACE TYPE", "Enum", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "GROUND VELOCITY", "meters per second", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
 
-            _simConnect?.RegisterDataDefineStruct<SimResponse>(DEFINITIONS.Struct1);
+            _simConnect?.RegisterDataDefineStruct<SimResponse>(DEFINITIONS.BasicInfo);
 
             // Request data every second
-            _simConnect?.RequestDataOnSimObject(DATA_REQUESTS.Request1, DEFINITIONS.Struct1, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, 0, 0, 0, 0);
+            _simConnect?.RequestDataOnSimObject(DATA_REQUESTS.RequestBasicInfo, DEFINITIONS.BasicInfo, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, 0, 0, 0, 0);
         }
 
         private void OnRecvSimobjectData(SimConnect sender, SIMCONNECT_RECV_SIMOBJECT_DATA data)
         {
-            if (data.dwRequestID == (uint)DATA_REQUESTS.Request1)
+            if (data.dwRequestID == (uint)DATA_REQUESTS.RequestBasicInfo)
             {
                 var simResponse = (SimResponse)data.dwData[0];
 
@@ -183,8 +193,13 @@ namespace TDXAirMechanic.Services
                 _mechanicService.TryEnqueueSimData(new SimVariableData
                 {
                     Title = simResponse.title,
-                    IndicatedAltitude = simResponse.indicated_altitude,
-                    IndicatedAirspeed = simResponse.indicated_airspeed
+                    IAS = simResponse.ias,
+                    Barber = simResponse.barber,
+                    Throttle = simResponse.throttle,
+                    StallWarning = simResponse.stallWarning,
+                    OnGround = simResponse.onGround,
+                    GroundType = simResponse.groundType,
+                    GroundSpeed = simResponse.groundSpeed
                 });
 
                 // Report progress, which will safely update the UI on the UI thread

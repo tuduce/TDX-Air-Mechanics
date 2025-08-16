@@ -1,11 +1,7 @@
 ﻿using SharpDX.DirectInput;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using TDXAirMechanic.Model;
 
 namespace TDXAirMechanic.Services
@@ -34,6 +30,9 @@ namespace TDXAirMechanic.Services
         // Currently active joystick device and instance
         private Joystick? _activeJoystick;
         private DeviceInstance? _activeJoystickDevice;
+
+        // FFB effects
+        Effect? springEffect = null;
 
         public MechanicService()
         {
@@ -193,10 +192,86 @@ namespace TDXAirMechanic.Services
             // TODO: Implement actual mechanic logic reacting to sim variables and current profile
             var profileInfo = _activeProfile is null ? "(no profile)" : $"Centered={_activeProfile.CenteredSpring}, Dynamic={_activeProfile.DynamicSpring}, Shaker={_activeProfile.StickShaker}";
             // Debug.WriteLine($"[Mechanic] Model={data.Title}, Alt={data.IndicatedAltitude}, IAS={data.IndicatedAirspeed}, Profile={profileInfo}");
+
+            // If we have a centered spring effect, apply it
+            if (_activeProfile?.CenteredSpring == true && 
+                _activeJoystick != null &&
+                springEffect == null)
+            {
+                // Create and apply a centered spring effect from SharpDX
+
+                // --- Get force feedback axes (robust fallback: use Axis if ForceFeedbackActuator is empty) ---
+                var axisObjects = _activeJoystick.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
+                    .OrderBy(a => a.Usage)
+                    .ToList();
+                if (axisObjects.Count == 0)
+                {
+                    // Fallback: use all axes and filter for X/Y by Usage
+                    axisObjects = _activeJoystick.GetObjects(DeviceObjectTypeFlags.Axis)
+                        .Where(a => a.Usage == 48 || a.Usage == 49)
+                        .OrderBy(a => a.Usage)
+                        .ToList();
+                    Debug.WriteLine($"Fallback: Using all axes with Usage==48/49. Found: {axisObjects.Count}");
+                    foreach (var ax in axisObjects)
+                    {
+                        Debug.WriteLine($"Axis: {ax.Name}, ObjectId: {ax.ObjectId}, Offset: {ax.Offset}, Usage: {ax.Usage}");
+                    }
+                    if (axisObjects.Count != 0)
+                    {
+                        int[] _axes = axisObjects.Select(a => a.Offset).ToArray();
+                        int[] _directions = new int[_axes.Length]; // All directions set to 0 (center)
+                        Debug.WriteLine($"Using Offsets for axes (sorted by Usage): [{string.Join(",", _axes)}]");
+
+                        // Get the GUID for the Spring effect
+                        EffectInfo springEffectInfo = _activeJoystick.GetEffects(EffectType.Condition).FirstOrDefault();
+                        if (springEffectInfo == null)
+                        {
+                            throw new NotSupportedException("This device does not support the Spring effect.");
+                        }
+
+                        // --- Define the Effect Parameters ---
+                        var effectParams = new EffectParameters();
+                        effectParams.Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian;
+                        effectParams.Duration = int.MaxValue; // Infinite duration
+                        effectParams.SamplePeriod = 0; // Use device default
+                        effectParams.Gain = 10000; // Full gain (0-10000)
+                        effectParams.TriggerButton = -1; // No trigger
+                        effectParams.TriggerRepeatInterval = 0;
+                        effectParams.SetAxes(_axes, _directions);
+
+                        // --- Define the Spring's Conditions ---
+                        var _conditionSet = new ConditionSet();
+                        _conditionSet.Conditions = new Condition[_axes.Length];
+                        for (int i = 0; i < _axes.Length; i++)
+                        {
+                            _conditionSet.Conditions[i] = new Condition
+                            {
+                                Offset = 0,
+                                PositiveCoefficient = 10000,
+                                NegativeCoefficient = 10000,
+                                DeadBand = 500,
+                                PositiveSaturation = 10000,
+                                NegativeSaturation = 10000
+                            };
+                        }
+                        // Assign the condition to the effect parameters
+                        effectParams.Parameters = _conditionSet;
+
+                        // Create the effect on the device
+                        springEffect = new Effect(_activeJoystick, springEffectInfo.Guid, effectParams);
+
+                        // Start the effect
+                        springEffect?.Start(1); // Infinite loop
+                    }
+                }
+            }
         }
 
         public void LoadJoysticks()
         {
+            // TODO: settle the initial loading of the joysticks
+            // The window must be foreground to acquire the joystick
+
             MechanicProgress _progress = new();
             try
             {
