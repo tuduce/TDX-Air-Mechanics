@@ -162,7 +162,6 @@ namespace TDXAirMechanic.Services
 
         private async Task DoMechanicWorkAsync()
         {
-            LoadJoysticks();
             try
             {
                 var reader = _simDataChannel.Reader;
@@ -211,6 +210,7 @@ namespace TDXAirMechanic.Services
 
                 if (_joysticks == null || _joysticks.Length == 0)
                 {
+                    _progress.Command = MechanicProgressCommand.SetStatus;
                     _progress.Status = "No force feedback devices found.";
                     _progressReporter?.Report(_progress);
                     return;
@@ -221,7 +221,7 @@ namespace TDXAirMechanic.Services
                 {
                     _progress.Joysticks.Add(joystick.InstanceName);
                 }
-                _progress.Status = _progress.Joysticks.FirstOrDefault();
+                _progress.Command = MechanicProgressCommand.SetJoysticks;
                 _progressReporter?.Report(_progress);
             }
             catch (Exception ex)

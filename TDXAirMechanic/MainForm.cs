@@ -46,6 +46,7 @@ namespace TDXAirMechanic
         private void MainForm_Shown(object? sender, EventArgs e)
         {
             _uiReadyForAcquire = true;
+            // _mechanicServices.LoadJoysticks();
 
             // If nothing is selected yet, select the first item now (we are foreground)
             if (comboBoxJoysticks.Items.Count > 0 && comboBoxJoysticks.SelectedIndex < 0)
@@ -56,13 +57,21 @@ namespace TDXAirMechanic
 
         private void MechanicProgressReporter(MechanicProgress data)
         {
-            // This code is guaranteed to run on the UI thread!
-            labelJoystickStatus.Text = data.Status;
-
-            // Setting DataSource triggers SelectedIndexChanged; suppress until Shown
-            comboBoxJoysticks.DataSource = null;
-            comboBoxJoysticks.DataSource = data.Joysticks;
-            comboBoxJoysticks.SelectedIndex = -1;
+            switch (data.Command)
+            {
+                case MechanicProgressCommand.SetStatus:
+                    // This code is guaranteed to run on the UI thread!
+                    labelJoystickStatus.Text = data.Status;
+                    break;
+                case MechanicProgressCommand.SetJoysticks:
+                    // Update joystick list
+                    comboBoxJoysticks.DataSource = null;
+                    comboBoxJoysticks.DataSource = data.Joysticks;
+                    comboBoxJoysticks.SelectedIndex = -1;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(data.Command), data.Command, null);
+            }
         }
 
         private void SimConnectProgressReporter(AirplaneProfile data)
@@ -170,7 +179,7 @@ namespace TDXAirMechanic
 
         private void buttonRefresh_Click(object sender, EventArgs e)
         {
-            _mechanicServices?.LoadJoysticks();
+            _mechanicServices.LoadJoysticks();
         }
 
         private void switchCenterSpring_CheckedChanged(object sender, EventArgs e)

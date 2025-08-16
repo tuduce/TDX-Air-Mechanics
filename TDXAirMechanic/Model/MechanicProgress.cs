@@ -6,8 +6,16 @@ using System.Threading.Tasks;
 
 namespace TDXAirMechanic.Model
 {
+    // Enum for progress commands
+    public enum MechanicProgressCommand
+    {
+        SetStatus,
+        SetJoysticks
+    }
+
     public class MechanicProgress
     {
+        public MechanicProgressCommand Command { get; set; } = MechanicProgressCommand.SetStatus;
         public string Status { get; set; } = "";
         public List<string> Joysticks { get; set; } = [];
         public MechanicProgress() { }
