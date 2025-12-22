@@ -19,6 +19,6 @@ namespace TDXAirMechanic.Model
     public class SimCommand
     {
         public SimCommandType CommandType { get; set; }
-        public object Value { get; set; } // e.g., an integer for heading
+        public required object Value { get; set; } // e.g., an integer for heading
     }
 }

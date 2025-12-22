@@ -12,7 +12,7 @@ using TDXAirMechanic.Model;
 
 namespace TDXAirMechanic.Services
 {
-    public class SimConnectService : IDisposable
+    public class SimConnectService(MechanicService mechanicService) : IDisposable
     {
         private const int WM_USER_SIMCONNECT = 0x0402;
 
@@ -48,12 +48,7 @@ namespace TDXAirMechanic.Services
             public double groundSpeed;
         }
 
-        private readonly MechanicService _mechanicService;
-
-        public SimConnectService(MechanicService mechanicService)
-        {
-            _mechanicService = mechanicService;
-        }
+        private readonly MechanicService _mechanicService = mechanicService;
 
         public void Start(IProgress<AirplaneProfile> progress, IntPtr windowHandle)
         {
@@ -125,6 +120,7 @@ namespace TDXAirMechanic.Services
                     _simConnect?.ReceiveMessage();
 
                     // Small delay to prevent a tight loop from consuming 100% CPU
+                    // TODO: integrate with the UI message pump if possible
                     Thread.Sleep(50);
                 }
             }

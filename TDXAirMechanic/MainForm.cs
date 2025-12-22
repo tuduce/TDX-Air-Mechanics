@@ -92,7 +92,7 @@ namespace TDXAirMechanic
                         profile = new AirplaneProfile
                         {
                             Model = _currentModel,
-                            CenteredSpring = switchCenterSpring.Checked,
+                            CenteredSpring = SwitchCenterSpring.Checked,
                             DynamicSpring = switchDynamicSpring.Checked,
                             StickShaker = switchStickShaker.Checked
                         };
@@ -110,9 +110,9 @@ namespace TDXAirMechanic
             _applyingProfile = true;
             try
             {
-                switchCenterSpring.Checked = profile.CenteredSpring;
-                switchDynamicSpring.Visible = switchCenterSpring.Checked;
-                switchDynamicSpring.Checked = profile.DynamicSpring && switchCenterSpring.Checked;
+                SwitchCenterSpring.Checked = profile.CenteredSpring;
+                switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
+                switchDynamicSpring.Checked = profile.DynamicSpring && SwitchCenterSpring.Checked;
                 switchStickShaker.Checked = profile.StickShaker;
             }
             finally
@@ -132,8 +132,8 @@ namespace TDXAirMechanic
                 _profiles[_currentModel] = profile;
             }
 
-            profile.CenteredSpring = switchCenterSpring.Checked;
-            profile.DynamicSpring = switchCenterSpring.Checked && switchDynamicSpring.Checked; // only valid when centered
+            profile.CenteredSpring = SwitchCenterSpring.Checked;
+            profile.DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked; // only valid when centered
             profile.StickShaker = switchStickShaker.Checked;
 
             _mechanicServices.SetActiveProfile(profile);
@@ -151,7 +151,7 @@ namespace TDXAirMechanic
             switchStickShaker.CheckedChanged += switchStickShaker_CheckedChanged;
 
             // Ensure dynamic spring visibility reflects center spring state on startup
-            switchDynamicSpring.Visible = switchCenterSpring.Checked;
+            switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -182,10 +182,10 @@ namespace TDXAirMechanic
             _mechanicServices.LoadJoysticks();
         }
 
-        private void switchCenterSpring_CheckedChanged(object sender, EventArgs e)
+        private void SwitchCenterSpring_CheckedChanged(object sender, EventArgs e)
         {
             // Show/hide dynamic spring switch based on center spring state
-            switchDynamicSpring.Visible = switchCenterSpring.Checked;
+            switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
             if (!switchDynamicSpring.Visible)
             {
                 // Optional: reset its state when hidden
@@ -216,5 +216,6 @@ namespace TDXAirMechanic
             labelJoystickStatus.Text = name;
             textJoystickInfo.Text = info;
         }
+
     }
 }

@@ -41,7 +41,7 @@
             tabPageEffects = new TabPage();
             switchStickShaker = new MaterialSkin.Controls.MaterialSwitch();
             switchDynamicSpring = new MaterialSkin.Controls.MaterialSwitch();
-            switchCenterSpring = new MaterialSkin.Controls.MaterialSwitch();
+            SwitchCenterSpring = new MaterialSkin.Controls.MaterialSwitch();
             tabPageDevices = new TabPage();
             textJoystickInfo = new MaterialSkin.Controls.MaterialMultiLineTextBox();
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
@@ -167,7 +167,7 @@
             // 
             tabPageEffects.Controls.Add(switchStickShaker);
             tabPageEffects.Controls.Add(switchDynamicSpring);
-            tabPageEffects.Controls.Add(switchCenterSpring);
+            tabPageEffects.Controls.Add(SwitchCenterSpring);
             tabPageEffects.ImageKey = "icons8-depth-effect-48.png";
             tabPageEffects.Location = new Point(4, 39);
             tabPageEffects.Name = "tabPageEffects";
@@ -209,25 +209,25 @@
             switchDynamicSpring.Text = "Dynamic spring force";
             switchDynamicSpring.UseVisualStyleBackColor = true;
             // 
-            // switchCenterSpring
+            // SwitchCenterSpring
             // 
-            switchCenterSpring.AutoSize = true;
-            switchCenterSpring.BackColor = Color.Transparent;
-            switchCenterSpring.BackgroundImageLayout = ImageLayout.None;
-            switchCenterSpring.Checked = true;
-            switchCenterSpring.CheckState = CheckState.Checked;
-            switchCenterSpring.Depth = 0;
-            switchCenterSpring.Location = new Point(13, 13);
-            switchCenterSpring.Margin = new Padding(0);
-            switchCenterSpring.MouseLocation = new Point(-1, -1);
-            switchCenterSpring.MouseState = MaterialSkin.MouseState.HOVER;
-            switchCenterSpring.Name = "switchCenterSpring";
-            switchCenterSpring.Ripple = true;
-            switchCenterSpring.Size = new Size(168, 37);
-            switchCenterSpring.TabIndex = 0;
-            switchCenterSpring.Text = "Centered spring";
-            switchCenterSpring.UseVisualStyleBackColor = false;
-            switchCenterSpring.CheckedChanged += switchCenterSpring_CheckedChanged;
+            SwitchCenterSpring.AutoSize = true;
+            SwitchCenterSpring.BackColor = Color.Transparent;
+            SwitchCenterSpring.BackgroundImageLayout = ImageLayout.None;
+            SwitchCenterSpring.Checked = true;
+            SwitchCenterSpring.CheckState = CheckState.Checked;
+            SwitchCenterSpring.Depth = 0;
+            SwitchCenterSpring.Location = new Point(13, 13);
+            SwitchCenterSpring.Margin = new Padding(0);
+            SwitchCenterSpring.MouseLocation = new Point(-1, -1);
+            SwitchCenterSpring.MouseState = MaterialSkin.MouseState.HOVER;
+            SwitchCenterSpring.Name = "SwitchCenterSpring";
+            SwitchCenterSpring.Ripple = true;
+            SwitchCenterSpring.Size = new Size(168, 37);
+            SwitchCenterSpring.TabIndex = 0;
+            SwitchCenterSpring.Text = "Centered spring";
+            SwitchCenterSpring.UseVisualStyleBackColor = false;
+            SwitchCenterSpring.CheckedChanged += SwitchCenterSpring_CheckedChanged;
             // 
             // tabPageDevices
             // 
@@ -348,7 +348,7 @@
         private MaterialSkin.Controls.MaterialComboBox comboBoxJoysticks;
         private MaterialSkin.Controls.MaterialCard materialCard2;
         private MaterialSkin.Controls.MaterialLabel labelJoystickStatus;
-        private MaterialSkin.Controls.MaterialSwitch switchCenterSpring;
+        private MaterialSkin.Controls.MaterialSwitch SwitchCenterSpring;
         private MaterialSkin.Controls.MaterialSwitch switchDynamicSpring;
         private MaterialSkin.Controls.MaterialSwitch switchStickShaker;
         private MaterialSkin.Controls.MaterialMultiLineTextBox textJoystickInfo;
