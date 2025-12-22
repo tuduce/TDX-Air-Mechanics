@@ -37,6 +37,10 @@ namespace TDXAirMechanic.Services
         // Track currently pressed trim buttons to fire on rising edge only
         private readonly HashSet<int> _pressedTrimButtons = new();
 
+        // Joystick button capture for UI: when set, the next button press reports its index
+        private Action<int>? _buttonCaptureCallback;
+        private readonly HashSet<int> _pressedCaptureButtons = new();
+
         public MechanicService(IEffectsService effects)
         {
             _directInput = new();
@@ -51,6 +55,19 @@ namespace TDXAirMechanic.Services
 
             _progressReporter = (IProgress<MechanicProgress>?)progress;
             _mechanicTask = Task.Run(DoMechanicWorkAsync);
+        }
+
+        // UI can begin capture of next joystick button press
+        public void BeginButtonCapture(Action<int> onCaptured)
+        {
+            _buttonCaptureCallback = onCaptured;
+            _pressedCaptureButtons.Clear();
+        }
+
+        public void CancelButtonCapture()
+        {
+            _buttonCaptureCallback = null;
+            _pressedCaptureButtons.Clear();
         }
 
         // Called by UI to update the active profile or reflect changes
@@ -218,13 +235,39 @@ namespace TDXAirMechanic.Services
             var profile = _activeProfile;
             if (js == null || profile == null) return;
             if (js.NativePointer == IntPtr.Zero) return;
-            if (!profile.TrimEnabled) return;
 
             try
             {
                 var state = js.GetCurrentState();
                 var buttons = state.Buttons;
                 if (buttons == null || buttons.Length == 0) return;
+
+                // Handle UI capture first: capture next rising edge and then clear callback
+                if (_buttonCaptureCallback != null)
+                {
+                    for (int i = 0; i < buttons.Length; i++)
+                    {
+                        bool down = buttons[i];
+                        if (down)
+                        {
+                            if (_pressedCaptureButtons.Add(i))
+                            {
+                                var cb = _buttonCaptureCallback;
+                                _buttonCaptureCallback = null; // only once
+                                _pressedCaptureButtons.Clear();
+                                cb?.Invoke(i);
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            _pressedCaptureButtons.Remove(i);
+                        }
+                    }
+                }
+
+                // Trim buttons only when enabled
+                if (!profile.TrimEnabled) return;
 
                 int trimStep = profile.TrimStep;
 

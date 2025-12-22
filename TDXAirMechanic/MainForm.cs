@@ -218,6 +218,38 @@ namespace TDXAirMechanic
             _profileManager.SaveProfile(_currentProfile);
         }
 
+        private void WireTrimCaptureHandlers()
+        {
+            PitchUpTextBox.GotFocus += (s, e) => BeginJoystickCaptureForTextBox(PitchUpTextBox);
+            PitchDownTextBox.GotFocus += (s, e) => BeginJoystickCaptureForTextBox(PitchDownTextBox);
+            RollLeftTextBox.GotFocus += (s, e) => BeginJoystickCaptureForTextBox(RollLeftTextBox);
+            RollRightTextBox.GotFocus += (s, e) => BeginJoystickCaptureForTextBox(RollRightTextBox);
+
+            PitchUpTextBox.LostFocus += (s, e) => _mechanicServices.CancelButtonCapture();
+            PitchDownTextBox.LostFocus += (s, e) => _mechanicServices.CancelButtonCapture();
+            RollLeftTextBox.LostFocus += (s, e) => _mechanicServices.CancelButtonCapture();
+            RollRightTextBox.LostFocus += (s, e) => _mechanicServices.CancelButtonCapture();
+        }
+
+        private void BeginJoystickCaptureForTextBox(MaterialTextBox textBox)
+        {
+            // Clear current content to indicate capture mode
+            textBox.Text = string.Empty;
+            _mechanicServices.BeginButtonCapture(idx =>
+            {
+                // This callback executes on the mechanic background thread.
+                // Marshal back to UI thread to update the textbox and profile.
+                if (textBox.IsHandleCreated)
+                {
+                    textBox.Invoke(new Action(() =>
+                    {
+                        textBox.Text = idx.ToString();
+                        UpdateCurrentProfileFromUi();
+                    }));
+                }
+            });
+        }
+
         // MainForm_Load is called when the form is loaded
         private void MainForm_Load(object sender, EventArgs e)
         {
@@ -234,6 +266,9 @@ namespace TDXAirMechanic
             PitchDownTextBox.TextChanged += TrimTextBox_TextChanged;
             RollLeftTextBox.TextChanged += TrimTextBox_TextChanged;
             RollRightTextBox.TextChanged += TrimTextBox_TextChanged;
+
+            // Wire capture handlers for trim assignment
+            WireTrimCaptureHandlers();
 
             // Ensure dynamic spring visibility reflects center spring state on startup
             switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
