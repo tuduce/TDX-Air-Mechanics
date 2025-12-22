@@ -140,6 +140,11 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 ## Next Steps
 
+- Implement trim functionality
+  - The user should be able to select 4 joystick buttons to increment/decrement pitch and roll trim.
+  - These buttons must be saved in the airplane profile and loaded on profile selection.
+  - When the user pushes the pitch-up button, the mechanic should shift the center of the spring upward by a small increment (e.g., 0.5 degrees) each time the button is pressed, and similarly for pitch-down, roll-left, and roll-right.
+  - The trim settings are enabled only when the centered spring effect is active.
 - Expose dynamic spring tuning parameters in profiles:
   - Configure min/max stiffness and update threshold.
   - Optionally support non-linear curves (e.g., quadratic or piecewise) and separate per-axis gains.
