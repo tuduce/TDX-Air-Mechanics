@@ -19,5 +19,9 @@ namespace TDXAirMechanic.Services
 
         // Stop and clear all effects on the current device
         void ResetAll();
+
+        // Trim controls
+        // Adjust spring center offset by specified deltas for pitch (Y) and roll (X)
+        void NudgeTrim(int pitchDelta, int rollDelta);
     }
 }

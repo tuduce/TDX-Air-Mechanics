@@ -24,15 +24,18 @@ namespace TDXAirMechanic.Services
         // A flag to detect redundant calls to Dispose
         private bool _disposed = false;
 
-        // The currently active airplane profile (set by the UI)
-        // private AirplaneProfile? _activeProfile;
-
         // Currently active joystick device and instance
         private Joystick? _activeJoystick;
         private DeviceInstance? _activeJoystickDevice;
 
         // Effects manager
         private readonly IEffectsService _effects;
+
+        // Current profile to read trim button bindings
+        private AirplaneProfile? _activeProfile;
+
+        // Track currently pressed trim buttons to fire on rising edge only
+        private readonly HashSet<int> _pressedTrimButtons = new();
 
         public MechanicService(IEffectsService effects)
         {
@@ -53,7 +56,7 @@ namespace TDXAirMechanic.Services
         // Called by UI to update the active profile or reflect changes
         public void SetActiveProfile(AirplaneProfile profile)
         {
-            // _activeProfile = profile;
+            _activeProfile = profile;
             _effects.ApplyProfile(profile);
             Debug.WriteLine($"[Mechanic] Active profile set: Model={profile.Model}, Centered={profile.CenteredSpring}, Dynamic={profile.DynamicSpring}, Shaker={profile.StickShaker}");
         }
@@ -126,7 +129,10 @@ namespace TDXAirMechanic.Services
 
             // Attach to effects manager and apply current profile
             _effects.AttachDevice(joystick);
-            // If an active profile is set by UI, EffectsService will apply it on attach
+            if (_activeProfile != null)
+            {
+                _effects.ApplyProfile(_activeProfile);
+            }
 
             // Enumerate supported effects
             var effects = new List<string>();
@@ -175,15 +181,25 @@ namespace TDXAirMechanic.Services
                 var reader = _simDataChannel.Reader;
                 while (!_cts.IsCancellationRequested)
                 {
-                    // Prefer draining any queued items quickly
+                    // Drain queued items quickly
                     while (reader.TryRead(out var queued))
                     {
                         ProcessSimData(queued);
                     }
 
-                    // Await next item or cancellation
-                    var next = await reader.ReadAsync(_cts.Token);
-                    ProcessSimData(next);
+                    // Poll trim buttons ~50Hz even when no sim data is incoming
+                    PollTrimButtons();
+
+                    // Wait either for new sim data or a short delay for next poll
+                    var waitTask = reader.WaitToReadAsync(_cts.Token).AsTask();
+                    var delayTask = Task.Delay(20, _cts.Token);
+                    var completed = await Task.WhenAny(waitTask, delayTask);
+                    if (completed == waitTask && waitTask.Result)
+                    {
+                        // There's data available; process one to keep loop responsive
+                        if (reader.TryRead(out var next))
+                            ProcessSimData(next);
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -193,6 +209,50 @@ namespace TDXAirMechanic.Services
             catch (Exception ex)
             {
                 Debug.WriteLine(ex + "Error in mechanic work");
+            }
+        }
+
+        private void PollTrimButtons()
+        {
+            var js = _activeJoystick;
+            var profile = _activeProfile;
+            if (js == null || profile == null) return;
+            if (js.NativePointer == IntPtr.Zero) return;
+            if (!profile.TrimEnabled) return;
+
+            try
+            {
+                var state = js.GetCurrentState();
+                var buttons = state.Buttons;
+                if (buttons == null || buttons.Length == 0) return;
+
+                int trimStep = profile.TrimStep;
+
+                void HandleButton(int index, Action onPress)
+                {
+                    if (index < 0 || index >= buttons.Length) return;
+                    bool isDown = buttons[index];
+                    if (isDown)
+                    {
+                        if (_pressedTrimButtons.Add(index))
+                        {
+                            onPress(); // fire only on rising edge
+                        }
+                    }
+                    else
+                    {
+                        _pressedTrimButtons.Remove(index);
+                    }
+                }
+
+                HandleButton(profile.RollTrimLeftButton, () => _effects.NudgeTrim(0, -trimStep));
+                HandleButton(profile.RollTrimRightButton, () => _effects.NudgeTrim(0, trimStep));
+                HandleButton(profile.PitchTrimUpButton, () => _effects.NudgeTrim(trimStep, 0));
+                HandleButton(profile.PitchTrimDownButton, () => _effects.NudgeTrim(-trimStep, 0));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex + "[Mechanic] Failed to poll trim buttons");
             }
         }
 

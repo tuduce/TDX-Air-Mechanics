@@ -78,12 +78,47 @@ namespace TDXAirMechanic
             }
         }
 
+        private void RefreshProfilesDropdown()
+        {
+            var names = _profileManager.ListProfiles();
+            _applyingProfile = true;
+            try
+            {
+                comboBoxProfiles.DataSource = null;
+                comboBoxProfiles.DataSource = names;
+            }
+            finally
+            {
+                _applyingProfile = false;
+            }
+        }
+
+        private void SelectProfileInDropdown(string? model)
+        {
+            if (string.IsNullOrWhiteSpace(model)) return;
+            var names = comboBoxProfiles.DataSource as System.Collections.IList;
+            if (names == null) return;
+            var idx = names.IndexOf(model);
+            if (idx >= 0)
+            {
+                _applyingProfile = true;
+                try
+                {
+                    comboBoxProfiles.SelectedIndex = idx;
+                }
+                finally
+                {
+                    _applyingProfile = false;
+                }
+            }
+        }
+
         private void SimConnectProgressReporter(AirplaneProfile data)
         {
             // This code is guaranteed to run on the UI thread!
             labelAircraftName.Text = data.Model;
 
-            // Update current model and apply profile
+            // When simulator connects and model changes, auto-select its profile
             if (!string.IsNullOrWhiteSpace(data.Model))
             {
                 if (_currentModel != data.Model)
@@ -93,12 +128,20 @@ namespace TDXAirMechanic
                     // Load profile from disk (fallback to default)
                     _currentProfile = _profileManager.LoadProfileForModel(_currentModel);
 
-                    ApplyProfileToUi(_currentProfile);
-                    _mechanicServices.SetActiveProfile(_currentProfile);
+                    // Apply and update dropdown selection to match the aircraft model
+                    _applyingProfile = true;
+                    try
+                    {
+                        ApplyProfileToUi(_currentProfile);
+                        _mechanicServices.SetActiveProfile(_currentProfile);
 
-                    // Ensure profiles dropdown is populated
-                    RefreshProfilesDropdown();
-                    SelectProfileInDropdown(_currentProfile.Model);
+                        RefreshProfilesDropdown();
+                        SelectProfileInDropdown(_currentProfile.Model);
+                    }
+                    finally
+                    {
+                        _applyingProfile = false;
+                    }
                 }
             }
         }
@@ -112,11 +155,43 @@ namespace TDXAirMechanic
                 switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
                 switchDynamicSpring.Checked = profile.DynamicSpring && SwitchCenterSpring.Checked;
                 switchStickShaker.Checked = profile.StickShaker;
+
+                // Trim
+                TrimSwitch.Checked = profile.TrimEnabled;
+                PitchUpTextBox.Text = profile.PitchTrimUpButton >= 0 ? profile.PitchTrimUpButton.ToString() : string.Empty;
+                PitchDownTextBox.Text = profile.PitchTrimDownButton >= 0 ? profile.PitchTrimDownButton.ToString() : string.Empty;
+                RollLeftTextBox.Text = profile.RollTrimLeftButton >= 0 ? profile.RollTrimLeftButton.ToString() : string.Empty;
+                RollRightTextBox.Text = profile.RollTrimRightButton >= 0 ? profile.RollTrimRightButton.ToString() : string.Empty;
+
+                // Trim controls visibility follows centered spring
+                UpdateTrimControlsVisibility();
             }
             finally
             {
                 _applyingProfile = false;
             }
+        }
+
+        private void UpdateTrimControlsVisibility()
+        {
+            bool visible = SwitchCenterSpring.Checked;
+            TrimSwitch.Visible = visible;
+            JoyBtnExplainLabel.Visible = visible;
+            PitchUpLabel.Visible = visible;
+            PitchDownLabel.Visible = visible;
+            RollLeftLabel.Visible = visible;
+            RollRightLabel.Visible = visible;
+            PitchUpTextBox.Visible = visible;
+            PitchDownTextBox.Visible = visible;
+            RollLeftTextBox.Visible = visible;
+            RollRightTextBox.Visible = visible;
+        }
+
+        private static int ParseButtonIndex(MaterialTextBox textBox)
+        {
+            if (int.TryParse(textBox.Text, out var idx) && idx >= 0)
+                return idx;
+            return -1;
         }
 
         private void UpdateCurrentProfileFromUi()
@@ -129,6 +204,13 @@ namespace TDXAirMechanic
             _currentProfile.CenteredSpring = SwitchCenterSpring.Checked;
             _currentProfile.DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked; // only valid when centered
             _currentProfile.StickShaker = switchStickShaker.Checked;
+
+            // Trim
+            _currentProfile.TrimEnabled = TrimSwitch.Checked;
+            _currentProfile.PitchTrimUpButton = ParseButtonIndex(PitchUpTextBox);
+            _currentProfile.PitchTrimDownButton = ParseButtonIndex(PitchDownTextBox);
+            _currentProfile.RollTrimLeftButton = ParseButtonIndex(RollLeftTextBox);
+            _currentProfile.RollTrimRightButton = ParseButtonIndex(RollRightTextBox);
 
             _mechanicServices.SetActiveProfile(_currentProfile);
 
@@ -147,11 +229,28 @@ namespace TDXAirMechanic
             switchDynamicSpring.CheckedChanged += switchDynamicSpring_CheckedChanged;
             switchStickShaker.CheckedChanged += switchStickShaker_CheckedChanged;
 
+            TrimSwitch.CheckedChanged += TrimSwitch_CheckedChanged;
+            PitchUpTextBox.TextChanged += TrimTextBox_TextChanged;
+            PitchDownTextBox.TextChanged += TrimTextBox_TextChanged;
+            RollLeftTextBox.TextChanged += TrimTextBox_TextChanged;
+            RollRightTextBox.TextChanged += TrimTextBox_TextChanged;
+
             // Ensure dynamic spring visibility reflects center spring state on startup
             switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
+            UpdateTrimControlsVisibility();
 
             // Populate profiles dropdown from disk
             RefreshProfilesDropdown();
+        }
+
+        private void TrimSwitch_CheckedChanged(object? sender, EventArgs e)
+        {
+            UpdateCurrentProfileFromUi();
+        }
+
+        private void TrimTextBox_TextChanged(object? sender, EventArgs e)
+        {
+            UpdateCurrentProfileFromUi();
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -192,6 +291,9 @@ namespace TDXAirMechanic
                 switchDynamicSpring.Checked = false;
             }
 
+            // Trim controls visibility follows centered spring
+            UpdateTrimControlsVisibility();
+
             UpdateCurrentProfileFromUi();
         }
 
@@ -217,23 +319,6 @@ namespace TDXAirMechanic
             textJoystickInfo.Text = info;
         }
 
-        private void RefreshProfilesDropdown()
-        {
-            var names = _profileManager.ListProfiles();
-            comboBoxProfiles.DataSource = null;
-            comboBoxProfiles.DataSource = names;
-        }
-
-        private void SelectProfileInDropdown(string? model)
-        {
-            if (string.IsNullOrWhiteSpace(model)) return;
-            var names = comboBoxProfiles.DataSource as System.Collections.IList;
-            if (names == null) return;
-            var idx = names.IndexOf(model);
-            if (idx >= 0)
-                comboBoxProfiles.SelectedIndex = idx;
-        }
-
         private void comboBoxProfiles_SelectedIndexChanged(object? sender, EventArgs e)
         {
             if (_applyingProfile) return;
@@ -241,10 +326,8 @@ namespace TDXAirMechanic
             var selectedName = comboBoxProfiles.SelectedItem as string;
             if (string.IsNullOrWhiteSpace(selectedName)) return;
 
-            // When user picks a profile, apply (but keep current model in label)
+            // Load and apply the explicitly selected profile; do not override its Model
             var profile = _profileManager.LoadProfileForModel(selectedName);
-            // Override model to current aircraft if known
-            profile.Model = _currentModel ?? selectedName;
             _currentProfile = profile;
             ApplyProfileToUi(profile);
             _mechanicServices.SetActiveProfile(profile);
@@ -252,14 +335,21 @@ namespace TDXAirMechanic
 
         private void buttonSaveNewProfile_Click(object? sender, EventArgs e)
         {
-            // Saves current UI profile for current aircraft model name
-            if (string.IsNullOrWhiteSpace(_currentModel)) return;
+            // Saves current UI profile for current selection in the dropdown
+            var selectedName = comboBoxProfiles.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(selectedName)) return;
+
             var profile = new AirplaneProfile
             {
-                Model = _currentModel,
+                Model = selectedName,
                 CenteredSpring = SwitchCenterSpring.Checked,
                 DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked,
-                StickShaker = switchStickShaker.Checked
+                StickShaker = switchStickShaker.Checked,
+                TrimEnabled = TrimSwitch.Checked,
+                PitchTrimUpButton = ParseButtonIndex(PitchUpTextBox),
+                PitchTrimDownButton = ParseButtonIndex(PitchDownTextBox),
+                RollTrimLeftButton = ParseButtonIndex(RollLeftTextBox),
+                RollTrimRightButton = ParseButtonIndex(RollRightTextBox)
             };
             _profileManager.SaveProfile(profile);
             _currentProfile = profile;

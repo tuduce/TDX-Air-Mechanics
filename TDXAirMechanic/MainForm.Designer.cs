@@ -39,6 +39,15 @@
             labelJoystickStatus = new MaterialSkin.Controls.MaterialLabel();
             labelAircraftName = new MaterialSkin.Controls.MaterialLabel();
             tabPageEffects = new TabPage();
+            RollRightTextBox = new MaterialSkin.Controls.MaterialTextBox();
+            RollRightLabel = new MaterialSkin.Controls.MaterialLabel();
+            RollLeftTextBox = new MaterialSkin.Controls.MaterialTextBox();
+            RollLeftLabel = new MaterialSkin.Controls.MaterialLabel();
+            PitchDownTextBox = new MaterialSkin.Controls.MaterialTextBox();
+            PitchDownLabel = new MaterialSkin.Controls.MaterialLabel();
+            PitchUpTextBox = new MaterialSkin.Controls.MaterialTextBox();
+            PitchUpLabel = new MaterialSkin.Controls.MaterialLabel();
+            TrimSwitch = new MaterialSkin.Controls.MaterialSwitch();
             buttonSaveNewProfile = new MaterialSkin.Controls.MaterialButton();
             comboBoxProfiles = new MaterialSkin.Controls.MaterialComboBox();
             switchStickShaker = new MaterialSkin.Controls.MaterialSwitch();
@@ -49,6 +58,7 @@
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
             comboBoxJoysticks = new MaterialSkin.Controls.MaterialComboBox();
             tabPageSettings = new TabPage();
+            JoyBtnExplainLabel = new MaterialSkin.Controls.MaterialLabel();
             materialTabControl1.SuspendLayout();
             tabPageDashboard.SuspendLayout();
             materialCard1.SuspendLayout();
@@ -167,6 +177,17 @@
             // 
             // tabPageEffects
             // 
+            tabPageEffects.AutoScroll = true;
+            tabPageEffects.Controls.Add(JoyBtnExplainLabel);
+            tabPageEffects.Controls.Add(RollRightTextBox);
+            tabPageEffects.Controls.Add(RollRightLabel);
+            tabPageEffects.Controls.Add(RollLeftTextBox);
+            tabPageEffects.Controls.Add(RollLeftLabel);
+            tabPageEffects.Controls.Add(PitchDownTextBox);
+            tabPageEffects.Controls.Add(PitchDownLabel);
+            tabPageEffects.Controls.Add(PitchUpTextBox);
+            tabPageEffects.Controls.Add(PitchUpLabel);
+            tabPageEffects.Controls.Add(TrimSwitch);
             tabPageEffects.Controls.Add(buttonSaveNewProfile);
             tabPageEffects.Controls.Add(comboBoxProfiles);
             tabPageEffects.Controls.Add(switchStickShaker);
@@ -180,6 +201,137 @@
             tabPageEffects.TabIndex = 1;
             tabPageEffects.Text = "Effects";
             tabPageEffects.UseVisualStyleBackColor = true;
+            // 
+            // RollRightTextBox
+            // 
+            RollRightTextBox.AnimateReadOnly = false;
+            RollRightTextBox.BorderStyle = BorderStyle.None;
+            RollRightTextBox.Depth = 0;
+            RollRightTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
+            RollRightTextBox.LeadingIcon = null;
+            RollRightTextBox.Location = new Point(441, 254);
+            RollRightTextBox.MaxLength = 50;
+            RollRightTextBox.MouseState = MaterialSkin.MouseState.OUT;
+            RollRightTextBox.Multiline = false;
+            RollRightTextBox.Name = "RollRightTextBox";
+            RollRightTextBox.Size = new Size(111, 50);
+            RollRightTextBox.TabIndex = 11;
+            RollRightTextBox.Text = "";
+            RollRightTextBox.TrailingIcon = null;
+            // 
+            // RollRightLabel
+            // 
+            RollRightLabel.AutoSize = true;
+            RollRightLabel.Depth = 0;
+            RollRightLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            RollRightLabel.Location = new Point(441, 232);
+            RollRightLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            RollRightLabel.Name = "RollRightLabel";
+            RollRightLabel.Size = new Size(69, 19);
+            RollRightLabel.TabIndex = 10;
+            RollRightLabel.Text = "Roll Right";
+            // 
+            // RollLeftTextBox
+            // 
+            RollLeftTextBox.AnimateReadOnly = false;
+            RollLeftTextBox.BorderStyle = BorderStyle.None;
+            RollLeftTextBox.Depth = 0;
+            RollLeftTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
+            RollLeftTextBox.LeadingIcon = null;
+            RollLeftTextBox.Location = new Point(322, 254);
+            RollLeftTextBox.MaxLength = 50;
+            RollLeftTextBox.MouseState = MaterialSkin.MouseState.OUT;
+            RollLeftTextBox.Multiline = false;
+            RollLeftTextBox.Name = "RollLeftTextBox";
+            RollLeftTextBox.Size = new Size(111, 50);
+            RollLeftTextBox.TabIndex = 9;
+            RollLeftTextBox.Text = "";
+            RollLeftTextBox.TrailingIcon = null;
+            // 
+            // RollLeftLabel
+            // 
+            RollLeftLabel.AutoSize = true;
+            RollLeftLabel.Depth = 0;
+            RollLeftLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            RollLeftLabel.Location = new Point(322, 232);
+            RollLeftLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            RollLeftLabel.Name = "RollLeftLabel";
+            RollLeftLabel.Size = new Size(60, 19);
+            RollLeftLabel.TabIndex = 8;
+            RollLeftLabel.Text = "Roll Left";
+            // 
+            // PitchDownTextBox
+            // 
+            PitchDownTextBox.AnimateReadOnly = false;
+            PitchDownTextBox.BorderStyle = BorderStyle.None;
+            PitchDownTextBox.Depth = 0;
+            PitchDownTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
+            PitchDownTextBox.LeadingIcon = null;
+            PitchDownTextBox.Location = new Point(202, 254);
+            PitchDownTextBox.MaxLength = 50;
+            PitchDownTextBox.MouseState = MaterialSkin.MouseState.OUT;
+            PitchDownTextBox.Multiline = false;
+            PitchDownTextBox.Name = "PitchDownTextBox";
+            PitchDownTextBox.Size = new Size(111, 50);
+            PitchDownTextBox.TabIndex = 7;
+            PitchDownTextBox.Text = "";
+            PitchDownTextBox.TrailingIcon = null;
+            // 
+            // PitchDownLabel
+            // 
+            PitchDownLabel.AutoSize = true;
+            PitchDownLabel.Depth = 0;
+            PitchDownLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            PitchDownLabel.Location = new Point(202, 232);
+            PitchDownLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            PitchDownLabel.Name = "PitchDownLabel";
+            PitchDownLabel.Size = new Size(82, 19);
+            PitchDownLabel.TabIndex = 6;
+            PitchDownLabel.Text = "Pitch Down";
+            // 
+            // PitchUpTextBox
+            // 
+            PitchUpTextBox.AnimateReadOnly = false;
+            PitchUpTextBox.BorderStyle = BorderStyle.None;
+            PitchUpTextBox.Depth = 0;
+            PitchUpTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
+            PitchUpTextBox.LeadingIcon = null;
+            PitchUpTextBox.Location = new Point(84, 254);
+            PitchUpTextBox.MaxLength = 50;
+            PitchUpTextBox.MouseState = MaterialSkin.MouseState.OUT;
+            PitchUpTextBox.Multiline = false;
+            PitchUpTextBox.Name = "PitchUpTextBox";
+            PitchUpTextBox.Size = new Size(111, 50);
+            PitchUpTextBox.TabIndex = 5;
+            PitchUpTextBox.Text = "";
+            PitchUpTextBox.TrailingIcon = null;
+            // 
+            // PitchUpLabel
+            // 
+            PitchUpLabel.AutoSize = true;
+            PitchUpLabel.Depth = 0;
+            PitchUpLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            PitchUpLabel.Location = new Point(84, 232);
+            PitchUpLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            PitchUpLabel.Name = "PitchUpLabel";
+            PitchUpLabel.Size = new Size(60, 19);
+            PitchUpLabel.TabIndex = 4;
+            PitchUpLabel.Text = "Pitch Up";
+            // 
+            // TrimSwitch
+            // 
+            TrimSwitch.AutoSize = true;
+            TrimSwitch.Depth = 0;
+            TrimSwitch.Location = new Point(63, 158);
+            TrimSwitch.Margin = new Padding(0);
+            TrimSwitch.MouseLocation = new Point(-1, -1);
+            TrimSwitch.MouseState = MaterialSkin.MouseState.HOVER;
+            TrimSwitch.Name = "TrimSwitch";
+            TrimSwitch.Ripple = true;
+            TrimSwitch.Size = new Size(158, 37);
+            TrimSwitch.TabIndex = 3;
+            TrimSwitch.Text = "Dynamic Trim";
+            TrimSwitch.UseVisualStyleBackColor = true;
             // 
             // buttonSaveNewProfile
             // 
@@ -226,7 +378,7 @@
             switchStickShaker.Checked = true;
             switchStickShaker.CheckState = CheckState.Checked;
             switchStickShaker.Depth = 0;
-            switchStickShaker.Location = new Point(13, 158);
+            switchStickShaker.Location = new Point(13, 313);
             switchStickShaker.Margin = new Padding(0);
             switchStickShaker.MouseLocation = new Point(-1, -1);
             switchStickShaker.MouseState = MaterialSkin.MouseState.HOVER;
@@ -352,6 +504,18 @@
             tabPageSettings.Text = "Settings";
             tabPageSettings.UseVisualStyleBackColor = true;
             // 
+            // JoyBtnExplainLabel
+            // 
+            JoyBtnExplainLabel.AutoSize = true;
+            JoyBtnExplainLabel.Depth = 0;
+            JoyBtnExplainLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            JoyBtnExplainLabel.Location = new Point(85, 203);
+            JoyBtnExplainLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            JoyBtnExplainLabel.Name = "JoyBtnExplainLabel";
+            JoyBtnExplainLabel.Size = new Size(285, 19);
+            JoyBtnExplainLabel.TabIndex = 12;
+            JoyBtnExplainLabel.Text = "Click in the textbox to set joystick button";
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -397,5 +561,15 @@
         private MaterialSkin.Controls.MaterialMultiLineTextBox textJoystickInfo;
         private MaterialSkin.Controls.MaterialComboBox comboBoxProfiles;
         private MaterialSkin.Controls.MaterialButton buttonSaveNewProfile;
+        private MaterialSkin.Controls.MaterialTextBox PitchUpTextBox;
+        private MaterialSkin.Controls.MaterialLabel PitchUpLabel;
+        private MaterialSkin.Controls.MaterialSwitch TrimSwitch;
+        private MaterialSkin.Controls.MaterialTextBox RollRightTextBox;
+        private MaterialSkin.Controls.MaterialLabel RollRightLabel;
+        private MaterialSkin.Controls.MaterialTextBox RollLeftTextBox;
+        private MaterialSkin.Controls.MaterialLabel RollLeftLabel;
+        private MaterialSkin.Controls.MaterialTextBox PitchDownTextBox;
+        private MaterialSkin.Controls.MaterialLabel PitchDownLabel;
+        private MaterialSkin.Controls.MaterialLabel JoyBtnExplainLabel;
     }
 }
