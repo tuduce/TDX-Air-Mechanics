@@ -14,15 +14,18 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Selects active joystick.
   - Sets active airplane profile.
   - Receives progress updates for status and device lists.
+  - Displays available profiles from disk and allows saving new profiles.
 
 - Services
   - `MechanicService` (device management, sim data pipeline; delegates effects to `IEffectsService`).
   - `EffectsService` (implements `IEffectsService`: manages FFB effects lifecycle for the attached joystick).
   - `SimConnectService` (simulator variables producer, enqueues to `MechanicService`).
+  - `ProfileManager` (implements `IProfileManager`: JSON persistence of airplane profiles, filename sanitization, listing profiles by display `Model`).
 
 - Dependency Injection
   - Registered via `Program` using `Microsoft.Extensions.DependencyInjection`.
   - `IEffectsService` -> `EffectsService` as singleton.
+  - `IProfileManager` -> `ProfileManager` as singleton.
   - `MechanicService` receives `IEffectsService` via constructor injection.
 
 - Models
@@ -37,6 +40,7 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 2. `MechanicService` runs a background task that drains the channel and processes data.
 3. `MechanicService` forwards data and profile changes to `IEffectsService`, which creates/updates effects on the selected joystick.
 4. Progress is reported back to UI using `IProgress<MechanicProgress>` for thread-safe updates.
+5. `MainForm` uses `IProfileManager` to load/save the current aircraft model's profile; the "Effects" tab lists available profiles from disk.
 
 ## MechanicService Details
 
@@ -46,10 +50,10 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 - Joystick Management
   - `LoadJoysticks()`: Enumerates attached game controllers and filters to FFB-capable devices using `Capabilities.Flags.HasFlag(DeviceFlags.ForceFeedback)`. Reports device names to UI via `MechanicProgress`.
-  - `SelectJoystick(name, hwnd)`: Creates a `Joystick`, sets cooperative level to Exclusive|Foreground, configures properties (buffer size, autocenter off, full gain), acquires the device, stops/resets prior FFB, attaches device to `IEffectsService`, and re-applies current profile. Enumerates supported effects for info text.
+  - `SelectJoystick(name, hwnd)`: Creates a `Joystick`, sets cooperative level to Exclusive|Background (so effects persist when app loses focus), configures properties (buffer size, autocenter off, full gain), acquires the device, stops/resets prior FFB, attaches device to `IEffectsService`, and applies current profile. Enumerates supported effects for info text.
 
 - Profiles
-  - `SetActiveProfile(AirplaneProfile)`: Stores active profile and calls `IEffectsService.ApplyProfile(profile)`.
+  - `SetActiveProfile(AirplaneProfile)`: Calls `IEffectsService.ApplyProfile(profile)`.
 
 - Sim Data Pipeline
   - Channel: `Channel<SimVariableData>` with `SingleReader/SingleWriter`.
@@ -91,12 +95,16 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Implemented with a periodic effect (`PeriodicForce`) on X/Y axes.
   - Magnitude/period tuned based on stall vs overspeed; parameters updated in-place with `SetParameters`.
 
+- Threading and Disposal Safety
+  - Uses safe joystick access (`NativePointer` guard) to avoid calling DirectInput on disposed devices during shutdown.
+  - Captures a local joystick reference for effect creation/update to avoid races.
+
 ## Threading and Safety
 
 - Single writer/reader channel for `SimVariableData` ensures minimal contention.
 - UI communications use `IProgress<MechanicProgress>` to marshal updates safely.
 - Joystick lifecycle guarded by `Unacquire()` + `Dispose()` in `MechanicService`.
-- `EffectsService` cleans up effects on device detach/dispose.
+- `EffectsService` cleans up effects on device detach/dispose and guards against disposed device access.
 - Cancellation token source `_cts` controls the mechanic worker. Exceptions are handled cleanly in dispose.
 
 ## Error Handling
@@ -123,16 +131,6 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 ## Next Steps
 
-- Persist profiles to disk; auto-load by aircraft model name.
-  - Profiles are saved in the user's AppData folder, in the local profile in a folder TDX-AirMechanic.
-  - Profiles are saved as json files
-  - The filename is the aircraft model name with invalid filename characters replaced with underscores.
-  - There is a profile called default for the situations where a plane model is not yet known (e.g., not connected yet to a simulator)
-  - When a new model name is seen the profile for that model is loaded if it exists, otherwise the default profile is used.
-  - When a change is made to the profile in the UI it is saved to disk automatically.
-  - On the "Effects" tab there is a dropdown to select a profile from the ones available in the profiles folder.
-  - On the "Effects" tab there is now a "Save New Profile" button that saves the current profile to disk for the current aircraft model name.
-  - All the UI controls are taken from the MaterialSkin library. 
 - Add dynamic tuning of spring based on `SimVariableData` (airspeed, trim, etc.).
 - Enhance axis mapping and normalization across devices.
 - Improve progress reporting granularity (errors, device capability summaries).
