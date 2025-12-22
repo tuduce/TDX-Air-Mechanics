@@ -211,7 +211,7 @@ namespace TDXAirMechanic.Services
                         Offset = 0,
                         PositiveCoefficient = 10000,
                         NegativeCoefficient = 10000,
-                        DeadBand = 500,
+                        DeadBand = 0,
                         PositiveSaturation = 10000,
                         NegativeSaturation = 10000
                     };
@@ -277,7 +277,7 @@ namespace TDXAirMechanic.Services
                         Offset = offset,
                         PositiveCoefficient = coeff,
                         NegativeCoefficient = coeff,
-                        DeadBand = 500,
+                        DeadBand = 0,
                         PositiveSaturation = 10000,
                         NegativeSaturation = 10000
                     };

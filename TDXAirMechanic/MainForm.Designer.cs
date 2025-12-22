@@ -39,6 +39,7 @@
             labelJoystickStatus = new MaterialSkin.Controls.MaterialLabel();
             labelAircraftName = new MaterialSkin.Controls.MaterialLabel();
             tabPageEffects = new TabPage();
+            JoyBtnExplainLabel = new MaterialSkin.Controls.MaterialLabel();
             RollRightTextBox = new MaterialSkin.Controls.MaterialTextBox();
             RollRightLabel = new MaterialSkin.Controls.MaterialLabel();
             RollLeftTextBox = new MaterialSkin.Controls.MaterialTextBox();
@@ -58,7 +59,6 @@
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
             comboBoxJoysticks = new MaterialSkin.Controls.MaterialComboBox();
             tabPageSettings = new TabPage();
-            JoyBtnExplainLabel = new MaterialSkin.Controls.MaterialLabel();
             materialTabControl1.SuspendLayout();
             tabPageDashboard.SuspendLayout();
             materialCard1.SuspendLayout();
@@ -178,6 +178,7 @@
             // tabPageEffects
             // 
             tabPageEffects.AutoScroll = true;
+            tabPageEffects.BackColor = Color.WhiteSmoke;
             tabPageEffects.Controls.Add(JoyBtnExplainLabel);
             tabPageEffects.Controls.Add(RollRightTextBox);
             tabPageEffects.Controls.Add(RollRightLabel);
@@ -200,7 +201,18 @@
             tabPageEffects.Size = new Size(786, 340);
             tabPageEffects.TabIndex = 1;
             tabPageEffects.Text = "Effects";
-            tabPageEffects.UseVisualStyleBackColor = true;
+            // 
+            // JoyBtnExplainLabel
+            // 
+            JoyBtnExplainLabel.AutoSize = true;
+            JoyBtnExplainLabel.Depth = 0;
+            JoyBtnExplainLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            JoyBtnExplainLabel.Location = new Point(85, 203);
+            JoyBtnExplainLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            JoyBtnExplainLabel.Name = "JoyBtnExplainLabel";
+            JoyBtnExplainLabel.Size = new Size(285, 19);
+            JoyBtnExplainLabel.TabIndex = 12;
+            JoyBtnExplainLabel.Text = "Click in the textbox to set joystick button";
             // 
             // RollRightTextBox
             // 
@@ -426,6 +438,7 @@
             // 
             // tabPageDevices
             // 
+            tabPageDevices.BackColor = Color.WhiteSmoke;
             tabPageDevices.Controls.Add(textJoystickInfo);
             tabPageDevices.Controls.Add(buttonRefresh);
             tabPageDevices.Controls.Add(comboBoxJoysticks);
@@ -435,7 +448,6 @@
             tabPageDevices.Size = new Size(786, 340);
             tabPageDevices.TabIndex = 2;
             tabPageDevices.Text = "Devices";
-            tabPageDevices.UseVisualStyleBackColor = true;
             // 
             // textJoystickInfo
             // 
@@ -503,18 +515,6 @@
             tabPageSettings.TabIndex = 3;
             tabPageSettings.Text = "Settings";
             tabPageSettings.UseVisualStyleBackColor = true;
-            // 
-            // JoyBtnExplainLabel
-            // 
-            JoyBtnExplainLabel.AutoSize = true;
-            JoyBtnExplainLabel.Depth = 0;
-            JoyBtnExplainLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            JoyBtnExplainLabel.Location = new Point(85, 203);
-            JoyBtnExplainLabel.MouseState = MaterialSkin.MouseState.HOVER;
-            JoyBtnExplainLabel.Name = "JoyBtnExplainLabel";
-            JoyBtnExplainLabel.Size = new Size(285, 19);
-            JoyBtnExplainLabel.TabIndex = 12;
-            JoyBtnExplainLabel.Text = "Click in the textbox to set joystick button";
             // 
             // MainForm
             // 
