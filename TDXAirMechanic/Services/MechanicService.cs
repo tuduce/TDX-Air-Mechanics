@@ -34,8 +34,8 @@ namespace TDXAirMechanic.Services
         // Current profile to read trim button bindings
         private AirplaneProfile? _activeProfile;
 
-        // Track currently pressed trim buttons to fire on rising edge only
-        private readonly HashSet<int> _pressedTrimButtons = new();
+        // Track currently pressed trim buttons and last repeat time
+        private readonly Dictionary<int, long> _pressedTrimButtons = new(); // buttonIndex -> lastTick (Environment.TickCount64)
 
         // Joystick button capture for UI: when set, the next button press reports its index
         private Action<int>? _buttonCaptureCallback;
@@ -270,6 +270,7 @@ namespace TDXAirMechanic.Services
                 if (!profile.TrimEnabled) return;
 
                 int trimStep = profile.TrimStep;
+                long now = Environment.TickCount64;
 
                 void HandleButton(int index, Action onPress)
                 {
@@ -277,14 +278,21 @@ namespace TDXAirMechanic.Services
                     bool isDown = buttons[index];
                     if (isDown)
                     {
-                        if (_pressedTrimButtons.Add(index))
+                        if (!_pressedTrimButtons.TryGetValue(index, out var lastTick))
                         {
-                            onPress(); // fire only on rising edge
+                            _pressedTrimButtons[index] = now; // record first press
+                            onPress();
+                        }
+                        else if (now - lastTick >= 100)
+                        {
+                            _pressedTrimButtons[index] = now; // repeat every 100ms
+                            onPress();
                         }
                     }
                     else
                     {
-                        _pressedTrimButtons.Remove(index);
+                        if (_pressedTrimButtons.ContainsKey(index))
+                            _pressedTrimButtons.Remove(index);
                     }
                 }
 

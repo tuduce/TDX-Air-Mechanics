@@ -370,13 +370,14 @@ namespace TDXAirMechanic
 
         private void buttonSaveNewProfile_Click(object? sender, EventArgs e)
         {
-            // Saves current UI profile for current selection in the dropdown
+            // Saves a new profile. If simulator has an active model, save under that model name; otherwise use the selected profile name.
             var selectedName = comboBoxProfiles.SelectedItem as string;
-            if (string.IsNullOrWhiteSpace(selectedName)) return;
+            var targetName = !string.IsNullOrWhiteSpace(_currentModel) ? _currentModel : selectedName;
+            if (string.IsNullOrWhiteSpace(targetName)) return;
 
             var profile = new AirplaneProfile
             {
-                Model = selectedName,
+                Model = targetName!,
                 CenteredSpring = SwitchCenterSpring.Checked,
                 DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked,
                 StickShaker = switchStickShaker.Checked,
