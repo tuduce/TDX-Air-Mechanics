@@ -39,6 +39,8 @@
             labelJoystickStatus = new MaterialSkin.Controls.MaterialLabel();
             labelAircraftName = new MaterialSkin.Controls.MaterialLabel();
             tabPageEffects = new TabPage();
+            buttonSaveNewProfile = new MaterialSkin.Controls.MaterialButton();
+            comboBoxProfiles = new MaterialSkin.Controls.MaterialComboBox();
             switchStickShaker = new MaterialSkin.Controls.MaterialSwitch();
             switchDynamicSpring = new MaterialSkin.Controls.MaterialSwitch();
             SwitchCenterSpring = new MaterialSkin.Controls.MaterialSwitch();
@@ -165,6 +167,8 @@
             // 
             // tabPageEffects
             // 
+            tabPageEffects.Controls.Add(buttonSaveNewProfile);
+            tabPageEffects.Controls.Add(comboBoxProfiles);
             tabPageEffects.Controls.Add(switchStickShaker);
             tabPageEffects.Controls.Add(switchDynamicSpring);
             tabPageEffects.Controls.Add(SwitchCenterSpring);
@@ -177,13 +181,52 @@
             tabPageEffects.Text = "Effects";
             tabPageEffects.UseVisualStyleBackColor = true;
             // 
+            // buttonSaveNewProfile
+            // 
+            buttonSaveNewProfile.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            buttonSaveNewProfile.Density = MaterialSkin.Controls.MaterialButton.MaterialButtonDensity.Default;
+            buttonSaveNewProfile.Depth = 0;
+            buttonSaveNewProfile.HighEmphasis = true;
+            buttonSaveNewProfile.Icon = null;
+            buttonSaveNewProfile.Location = new Point(322, 11);
+            buttonSaveNewProfile.Margin = new Padding(4, 6, 4, 6);
+            buttonSaveNewProfile.MouseState = MaterialSkin.MouseState.HOVER;
+            buttonSaveNewProfile.Name = "buttonSaveNewProfile";
+            buttonSaveNewProfile.NoAccentTextColor = Color.Empty;
+            buttonSaveNewProfile.Size = new Size(155, 36);
+            buttonSaveNewProfile.TabIndex = 0;
+            buttonSaveNewProfile.Text = "Save New Profile";
+            buttonSaveNewProfile.Type = MaterialSkin.Controls.MaterialButton.MaterialButtonType.Contained;
+            buttonSaveNewProfile.UseAccentColor = false;
+            // 
+            // comboBoxProfiles
+            // 
+            comboBoxProfiles.AutoResize = false;
+            comboBoxProfiles.BackColor = Color.FromArgb(255, 255, 255);
+            comboBoxProfiles.Depth = 0;
+            comboBoxProfiles.DrawMode = DrawMode.OwnerDrawVariable;
+            comboBoxProfiles.DropDownHeight = 174;
+            comboBoxProfiles.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboBoxProfiles.DropDownWidth = 121;
+            comboBoxProfiles.Font = new Font("Microsoft Sans Serif", 14F, FontStyle.Bold, GraphicsUnit.Pixel);
+            comboBoxProfiles.ForeColor = Color.FromArgb(222, 0, 0, 0);
+            comboBoxProfiles.IntegralHeight = false;
+            comboBoxProfiles.ItemHeight = 43;
+            comboBoxProfiles.Location = new Point(5, 5);
+            comboBoxProfiles.MaxDropDownItems = 4;
+            comboBoxProfiles.MouseState = MaterialSkin.MouseState.OUT;
+            comboBoxProfiles.Name = "comboBoxProfiles";
+            comboBoxProfiles.Size = new Size(308, 49);
+            comboBoxProfiles.StartIndex = 0;
+            comboBoxProfiles.TabIndex = 1;
+            // 
             // switchStickShaker
             // 
             switchStickShaker.AutoSize = true;
             switchStickShaker.Checked = true;
             switchStickShaker.CheckState = CheckState.Checked;
             switchStickShaker.Depth = 0;
-            switchStickShaker.Location = new Point(13, 105);
+            switchStickShaker.Location = new Point(13, 158);
             switchStickShaker.Margin = new Padding(0);
             switchStickShaker.MouseLocation = new Point(-1, -1);
             switchStickShaker.MouseState = MaterialSkin.MouseState.HOVER;
@@ -198,7 +241,7 @@
             // 
             switchDynamicSpring.AutoSize = true;
             switchDynamicSpring.Depth = 0;
-            switchDynamicSpring.Location = new Point(63, 59);
+            switchDynamicSpring.Location = new Point(63, 112);
             switchDynamicSpring.Margin = new Padding(0);
             switchDynamicSpring.MouseLocation = new Point(-1, -1);
             switchDynamicSpring.MouseState = MaterialSkin.MouseState.HOVER;
@@ -217,7 +260,7 @@
             SwitchCenterSpring.Checked = true;
             SwitchCenterSpring.CheckState = CheckState.Checked;
             SwitchCenterSpring.Depth = 0;
-            SwitchCenterSpring.Location = new Point(13, 13);
+            SwitchCenterSpring.Location = new Point(13, 66);
             SwitchCenterSpring.Margin = new Padding(0);
             SwitchCenterSpring.MouseLocation = new Point(-1, -1);
             SwitchCenterSpring.MouseState = MaterialSkin.MouseState.HOVER;
@@ -352,5 +395,7 @@
         private MaterialSkin.Controls.MaterialSwitch switchDynamicSpring;
         private MaterialSkin.Controls.MaterialSwitch switchStickShaker;
         private MaterialSkin.Controls.MaterialMultiLineTextBox textJoystickInfo;
+        private MaterialSkin.Controls.MaterialComboBox comboBoxProfiles;
+        private MaterialSkin.Controls.MaterialButton buttonSaveNewProfile;
     }
 }

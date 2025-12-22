@@ -15,6 +15,24 @@ namespace TDXAirMechanic.Services
         private Effect? _springEffect;
         private Effect? _stickShakerEffect; // single periodic effect applied on X/Y
 
+        private Joystick? GetJoystickSafe()
+        {
+            var js = _joystick;
+            if (js == null)
+                return null;
+            try
+            {
+                // If disposed, NativePointer is zero and any call will throw
+                if (js.NativePointer == IntPtr.Zero)
+                    return null;
+                return js;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public void AttachDevice(Joystick joystick)
         {
             if (ReferenceEquals(_joystick, joystick))
@@ -40,12 +58,13 @@ namespace TDXAirMechanic.Services
         {
             _profile = profile;
 
-            if (_joystick == null)
+            var js = GetJoystickSafe();
+            if (js == null)
                 return;
 
             // Spring
             if (_profile?.CenteredSpring == true)
-                EnsureSpringEffect();
+                EnsureSpringEffect(js);
             else
                 RemoveSpringEffect();
 
@@ -56,12 +75,13 @@ namespace TDXAirMechanic.Services
 
         public void Update(SimVariableData data)
         {
-            if (_joystick == null || _profile == null)
+            var js = GetJoystickSafe();
+            if (js == null || _profile == null)
                 return;
 
             // Ensure base spring exists when requested
             if (_profile.CenteredSpring)
-                EnsureSpringEffect();
+                EnsureSpringEffect(js);
 
             // Stick shaker based on stall warning or overspeed
             if (_profile.StickShaker)
@@ -70,7 +90,7 @@ namespace TDXAirMechanic.Services
                 bool overspeed = data.IAS > 0 && data.Barber > 0 && data.IAS >= data.Barber * 0.98; // near barber pole
                 if (stall || overspeed)
                 {
-                    EnsureStickShakerEffect(stall, overspeed);
+                    EnsureStickShakerEffect(js, stall, overspeed);
                 }
                 else
                 {
@@ -85,9 +105,9 @@ namespace TDXAirMechanic.Services
             RemoveSpringEffect();
         }
 
-        private void EnsureSpringEffect()
+        private void EnsureSpringEffect(Joystick js)
         {
-            if (_joystick == null)
+            if (js == null)
                 return;
 
             if (_springEffect != null)
@@ -96,13 +116,13 @@ namespace TDXAirMechanic.Services
             try
             {
                 // Try to use actuator objects first
-                var axisObjects = _joystick.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
+                var axisObjects = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
                     .OrderBy(a => a.Usage)
                     .ToList();
 
                 if (axisObjects.Count == 0)
                 {
-                    axisObjects = _joystick.GetObjects(DeviceObjectTypeFlags.Axis)
+                    axisObjects = js.GetObjects(DeviceObjectTypeFlags.Axis)
                         .Where(a => a.Usage == 48 || a.Usage == 49)
                         .OrderBy(a => a.Usage)
                         .ToList();
@@ -118,7 +138,7 @@ namespace TDXAirMechanic.Services
                 int[] axes = axisObjects.Select(a => a.Offset).ToArray();
                 int[] dirs = new int[axes.Length];
 
-                var springInfo = _joystick.GetEffects(EffectType.Condition).FirstOrDefault();
+                var springInfo = js.GetEffects(EffectType.Condition).FirstOrDefault();
                 if (springInfo == null)
                 {
                     Debug.WriteLine("[Effects] Spring effect not supported by device.");
@@ -155,7 +175,7 @@ namespace TDXAirMechanic.Services
 
                 ep.Parameters = cs;
 
-                _springEffect = new Effect(_joystick, springInfo.Guid, ep);
+                _springEffect = new Effect(js, springInfo.Guid, ep);
                 _springEffect.Start(1);
             }
             catch (Exception ex)
@@ -172,9 +192,9 @@ namespace TDXAirMechanic.Services
             _springEffect = null;
         }
 
-        private void EnsureStickShakerEffect(bool stall, bool overspeed)
+        private void EnsureStickShakerEffect(Joystick js, bool stall, bool overspeed)
         {
-            if (_joystick == null)
+            if (js == null)
                 return;
 
             try
@@ -182,13 +202,13 @@ namespace TDXAirMechanic.Services
                 // Create lazily if needed
                 if (_stickShakerEffect == null)
                 {
-                    var axisObjects = _joystick.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
+                    var axisObjects = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
                         .OrderBy(a => a.Usage)
                         .ToList();
 
                     if (axisObjects.Count == 0)
                     {
-                        axisObjects = _joystick.GetObjects(DeviceObjectTypeFlags.Axis)
+                        axisObjects = js.GetObjects(DeviceObjectTypeFlags.Axis)
                             .Where(a => a.Usage == 48 || a.Usage == 49)
                             .OrderBy(a => a.Usage)
                             .ToList();
@@ -200,7 +220,7 @@ namespace TDXAirMechanic.Services
                     int[] axes = axisObjects.Select(a => a.Offset).ToArray();
                     int[] dirs = new int[axes.Length];
 
-                    var sineInfo = _joystick.GetEffects(EffectType.Periodic).FirstOrDefault();
+                    var sineInfo = js.GetEffects(EffectType.Periodic).FirstOrDefault();
                     if (sineInfo == null)
                     {
                         Debug.WriteLine("[Effects] Periodic effect not supported for stick shaker.");
@@ -229,7 +249,7 @@ namespace TDXAirMechanic.Services
 
                     ep.Parameters = periodic;
 
-                    _stickShakerEffect = new Effect(_joystick, sineInfo.Guid, ep);
+                    _stickShakerEffect = new Effect(js, sineInfo.Guid, ep);
                     _stickShakerEffect.Start(1);
                 }
 
@@ -258,9 +278,9 @@ namespace TDXAirMechanic.Services
                 // SharpDX requires re-setting axes when updating parameters on some drivers
                 try
                 {
-                    var objs = _joystick.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator).ToList();
+                    var objs = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator).ToList();
                     if (objs.Count == 0)
-                        objs = _joystick.GetObjects(DeviceObjectTypeFlags.Axis).Where(a => a.Usage == 48 || a.Usage == 49).ToList();
+                        objs = js.GetObjects(DeviceObjectTypeFlags.Axis).Where(a => a.Usage == 48 || a.Usage == 49).ToList();
                     if (objs.Count > 0)
                     {
                         int[] axes = objs.Select(a => a.Offset).ToArray();

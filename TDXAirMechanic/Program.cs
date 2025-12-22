@@ -13,6 +13,7 @@ namespace TDXAirMechanic
             // Configure DI
             var services = new ServiceCollection();
             services.AddSingleton<TDXAirMechanic.Services.IEffectsService, TDXAirMechanic.Services.EffectsService>();
+            services.AddSingleton<TDXAirMechanic.Services.IProfileManager, TDXAirMechanic.Services.ProfileManager>();
             services.AddSingleton<Services.SimConnectService>();
             services.AddSingleton<Services.MechanicService>();
             services.AddSingleton<MainForm>();

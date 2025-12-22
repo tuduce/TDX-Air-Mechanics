@@ -2,7 +2,6 @@ using MaterialSkin;
 using MaterialSkin.Controls;
 using TDXAirMechanic.Model;
 using TDXAirMechanic.Services;
-using System.Collections.Generic;
 
 namespace TDXAirMechanic
 {
@@ -10,19 +9,19 @@ namespace TDXAirMechanic
     {
         private readonly SimConnectService _simConnectService;
         private readonly MechanicService _mechanicServices;
+        private readonly IProfileManager _profileManager;
         private readonly CancellationTokenSource _formClosingCts = new CancellationTokenSource();
 
         private bool _isSimConnectClicked = false;
 
-        // In-memory per-aircraft profiles
-        private readonly Dictionary<string, AirplaneProfile> _profiles = new();
+        private AirplaneProfile? _currentProfile;
         private string? _currentModel;
         private bool _applyingProfile;
 
         // Prevent joystick acquire before the window is foreground
         private bool _uiReadyForAcquire = false;
 
-        public MainForm(SimConnectService simConnectService, MechanicService mechanicServices)
+        public MainForm(SimConnectService simConnectService, MechanicService mechanicServices, IProfileManager profileManager)
         {
             InitializeComponent();
 
@@ -38,9 +37,14 @@ namespace TDXAirMechanic
 
             _simConnectService = simConnectService;
             _mechanicServices = mechanicServices;
+            _profileManager = profileManager;
 
             // Hook joystick selection change
             comboBoxJoysticks.SelectedIndexChanged += comboBoxJoysticks_SelectedIndexChanged;
+
+            // Hook profile dropdown
+            comboBoxProfiles.SelectedIndexChanged += comboBoxProfiles_SelectedIndexChanged;
+            buttonSaveNewProfile.Click += buttonSaveNewProfile_Click;
         }
 
         private void MainForm_Shown(object? sender, EventArgs e)
@@ -67,7 +71,7 @@ namespace TDXAirMechanic
                     // Update joystick list
                     comboBoxJoysticks.DataSource = null;
                     comboBoxJoysticks.DataSource = data.Joysticks;
-                    comboBoxJoysticks.SelectedIndex = -1;
+                    comboBoxJoysticks.SelectedIndex = 0;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(data.Command), data.Command, null);
@@ -86,21 +90,15 @@ namespace TDXAirMechanic
                 {
                     _currentModel = data.Model;
 
-                    if (!_profiles.TryGetValue(_currentModel, out var profile))
-                    {
-                        // Initialize a new profile from current UI state
-                        profile = new AirplaneProfile
-                        {
-                            Model = _currentModel,
-                            CenteredSpring = SwitchCenterSpring.Checked,
-                            DynamicSpring = switchDynamicSpring.Checked,
-                            StickShaker = switchStickShaker.Checked
-                        };
-                        _profiles[_currentModel] = profile;
-                    }
+                    // Load profile from disk (fallback to default)
+                    _currentProfile = _profileManager.LoadProfileForModel(_currentModel);
 
-                    ApplyProfileToUi(profile);
-                    _mechanicServices.SetActiveProfile(profile);
+                    ApplyProfileToUi(_currentProfile);
+                    _mechanicServices.SetActiveProfile(_currentProfile);
+
+                    // Ensure profiles dropdown is populated
+                    RefreshProfilesDropdown();
+                    SelectProfileInDropdown(_currentProfile.Model);
                 }
             }
         }
@@ -126,17 +124,16 @@ namespace TDXAirMechanic
             if (_applyingProfile) return;
             if (string.IsNullOrWhiteSpace(_currentModel)) return;
 
-            if (!_profiles.TryGetValue(_currentModel, out var profile))
-            {
-                profile = new AirplaneProfile { Model = _currentModel };
-                _profiles[_currentModel] = profile;
-            }
+            _currentProfile ??= new AirplaneProfile { Model = _currentModel };
 
-            profile.CenteredSpring = SwitchCenterSpring.Checked;
-            profile.DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked; // only valid when centered
-            profile.StickShaker = switchStickShaker.Checked;
+            _currentProfile.CenteredSpring = SwitchCenterSpring.Checked;
+            _currentProfile.DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked; // only valid when centered
+            _currentProfile.StickShaker = switchStickShaker.Checked;
 
-            _mechanicServices.SetActiveProfile(profile);
+            _mechanicServices.SetActiveProfile(_currentProfile);
+
+            // Auto-save on change
+            _profileManager.SaveProfile(_currentProfile);
         }
 
         // MainForm_Load is called when the form is loaded
@@ -152,6 +149,9 @@ namespace TDXAirMechanic
 
             // Ensure dynamic spring visibility reflects center spring state on startup
             switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
+
+            // Populate profiles dropdown from disk
+            RefreshProfilesDropdown();
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -217,5 +217,54 @@ namespace TDXAirMechanic
             textJoystickInfo.Text = info;
         }
 
+        private void RefreshProfilesDropdown()
+        {
+            var names = _profileManager.ListProfiles();
+            comboBoxProfiles.DataSource = null;
+            comboBoxProfiles.DataSource = names;
+        }
+
+        private void SelectProfileInDropdown(string? model)
+        {
+            if (string.IsNullOrWhiteSpace(model)) return;
+            var names = comboBoxProfiles.DataSource as System.Collections.IList;
+            if (names == null) return;
+            var idx = names.IndexOf(model);
+            if (idx >= 0)
+                comboBoxProfiles.SelectedIndex = idx;
+        }
+
+        private void comboBoxProfiles_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (_applyingProfile) return;
+
+            var selectedName = comboBoxProfiles.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(selectedName)) return;
+
+            // When user picks a profile, apply (but keep current model in label)
+            var profile = _profileManager.LoadProfileForModel(selectedName);
+            // Override model to current aircraft if known
+            profile.Model = _currentModel ?? selectedName;
+            _currentProfile = profile;
+            ApplyProfileToUi(profile);
+            _mechanicServices.SetActiveProfile(profile);
+        }
+
+        private void buttonSaveNewProfile_Click(object? sender, EventArgs e)
+        {
+            // Saves current UI profile for current aircraft model name
+            if (string.IsNullOrWhiteSpace(_currentModel)) return;
+            var profile = new AirplaneProfile
+            {
+                Model = _currentModel,
+                CenteredSpring = SwitchCenterSpring.Checked,
+                DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked,
+                StickShaker = switchStickShaker.Checked
+            };
+            _profileManager.SaveProfile(profile);
+            _currentProfile = profile;
+            RefreshProfilesDropdown();
+            SelectProfileInDropdown(profile.Model);
+        }
     }
 }

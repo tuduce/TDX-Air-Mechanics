@@ -25,7 +25,7 @@ namespace TDXAirMechanic.Services
         private bool _disposed = false;
 
         // The currently active airplane profile (set by the UI)
-        private AirplaneProfile? _activeProfile;
+        // private AirplaneProfile? _activeProfile;
 
         // Currently active joystick device and instance
         private Joystick? _activeJoystick;
@@ -53,7 +53,7 @@ namespace TDXAirMechanic.Services
         // Called by UI to update the active profile or reflect changes
         public void SetActiveProfile(AirplaneProfile profile)
         {
-            _activeProfile = profile;
+            // _activeProfile = profile;
             _effects.ApplyProfile(profile);
             Debug.WriteLine($"[Mechanic] Active profile set: Model={profile.Model}, Centered={profile.CenteredSpring}, Dynamic={profile.DynamicSpring}, Shaker={profile.StickShaker}");
         }
@@ -110,8 +110,9 @@ namespace TDXAirMechanic.Services
             // Create and configure
             var joystick = new Joystick(_directInput, device.InstanceGuid);
 
-            // Set cooperative level - Exclusive|Foreground is commonly required for FFB
-            joystick.SetCooperativeLevel(hwnd, CooperativeLevel.Exclusive | CooperativeLevel.Foreground);
+            // Set cooperative level - use Background to keep FFB active when app loses focus
+            // Many drivers require Exclusive for FFB, but Foreground causes effects to stop on focus loss.
+            joystick.SetCooperativeLevel(hwnd, CooperativeLevel.Exclusive | CooperativeLevel.Background);
 
             // Recommended defaults
             try { joystick.Properties.BufferSize = 128; } catch { }
@@ -125,10 +126,7 @@ namespace TDXAirMechanic.Services
 
             // Attach to effects manager and apply current profile
             _effects.AttachDevice(joystick);
-            if (_activeProfile != null)
-            {
-                _effects.ApplyProfile(_activeProfile);
-            }
+            // If an active profile is set by UI, EffectsService will apply it on attach
 
             // Enumerate supported effects
             var effects = new List<string>();
@@ -150,6 +148,7 @@ namespace TDXAirMechanic.Services
                 var caps = joystick.Capabilities;
                 sb.AppendLine($"Axes: {caps.AxeCount}, Buttons: {caps.ButtonCount}, POVs: {caps.PovCount}");
                 sb.AppendLine($"FFB: {(caps.Flags.HasFlag(DeviceFlags.ForceFeedback) ? "Yes" : "No")}");
+                sb.AppendLine($"Cooperative: Exclusive|Background");
             }
             catch { }
             if (effects.Count > 0)
