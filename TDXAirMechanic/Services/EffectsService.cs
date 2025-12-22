@@ -15,6 +15,10 @@ namespace TDXAirMechanic.Services
         private Effect? _springEffect;
         private Effect? _stickShakerEffect; // single periodic effect applied on X/Y
 
+        // Cache axes used for spring updates and last applied stiffness to avoid churn
+        private int[]? _springAxes;
+        private int _lastSpringCoeff = -1;
+
         private Joystick? GetJoystickSafe()
         {
             var js = _joystick;
@@ -83,6 +87,10 @@ namespace TDXAirMechanic.Services
             if (_profile.CenteredSpring)
                 EnsureSpringEffect(js);
 
+            // Dynamic spring tuning based on airspeed
+            if (_profile.CenteredSpring && _profile.DynamicSpring)
+                UpdateDynamicSpring(js, data);
+
             // Stick shaker based on stall warning or overspeed
             if (_profile.StickShaker)
             {
@@ -137,6 +145,7 @@ namespace TDXAirMechanic.Services
 
                 int[] axes = axisObjects.Select(a => a.Offset).ToArray();
                 int[] dirs = new int[axes.Length];
+                _springAxes = axes;
 
                 var springInfo = js.GetEffects(EffectType.Condition).FirstOrDefault();
                 if (springInfo == null)
@@ -177,6 +186,7 @@ namespace TDXAirMechanic.Services
 
                 _springEffect = new Effect(js, springInfo.Guid, ep);
                 _springEffect.Start(1);
+                _lastSpringCoeff = -1; // force first dynamic update to apply
             }
             catch (Exception ex)
             {
@@ -185,11 +195,98 @@ namespace TDXAirMechanic.Services
             }
         }
 
+        private void UpdateDynamicSpring(Joystick js, SimVariableData data)
+        {
+            if (_springEffect == null)
+                return;
+
+            try
+            {
+                // Determine normalized speed factor [0..1]
+                double ias = Math.Max(0, data.IAS);
+                double barber = data.Barber;
+                double factor = 0;
+                if (barber > 0)
+                {
+                    factor = Math.Clamp(ias / barber, 0.0, 1.0);
+                }
+                else
+                {
+                    // Fallback heuristic if barber pole not provided: assume 250 KIAS as high end on many aircraft
+                    factor = Math.Clamp(ias / 250.0, 0.0, 1.0);
+                }
+
+                // Map to stiffness range [min..max]
+                const int minCoeff = 1000; // softer feel at low speed
+                const int maxCoeff = 10000; // device max
+                int coeff = (int)Math.Round(minCoeff + factor * (maxCoeff - minCoeff));
+
+                // Avoid excessive updates; re-apply only when changed meaningfully
+                if (Math.Abs(coeff - _lastSpringCoeff) < 100)
+                    return;
+
+                var axes = _springAxes;
+                if (axes == null || axes.Length == 0)
+                {
+                    // Try to recover axes if cache was lost
+                    var objs = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
+                                 .OrderBy(a => a.Usage)
+                                 .ToList();
+                    if (objs.Count == 0)
+                        objs = js.GetObjects(DeviceObjectTypeFlags.Axis).Where(a => a.Usage == 48 || a.Usage == 49).OrderBy(a => a.Usage).ToList();
+                    axes = objs.Select(a => a.Offset).ToArray();
+                    _springAxes = axes;
+                }
+                if (axes == null || axes.Length == 0)
+                    return;
+
+                int[] dirs = new int[axes.Length];
+
+                var update = new EffectParameters
+                {
+                    Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                    Duration = int.MaxValue,
+                    SamplePeriod = 0,
+                    Gain = 10000,
+                    TriggerButton = -1,
+                    TriggerRepeatInterval = 0
+                };
+                update.SetAxes(axes, dirs);
+
+                var cs = new ConditionSet
+                {
+                    Conditions = new Condition[axes.Length]
+                };
+                for (int i = 0; i < axes.Length; i++)
+                {
+                    cs.Conditions[i] = new Condition
+                    {
+                        Offset = 0,
+                        PositiveCoefficient = coeff,
+                        NegativeCoefficient = coeff,
+                        DeadBand = 500,
+                        PositiveSaturation = 10000,
+                        NegativeSaturation = 10000
+                    };
+                }
+                update.Parameters = cs;
+
+                _springEffect.SetParameters(update, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                _lastSpringCoeff = coeff;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex + "[Effects] Failed to update dynamic spring");
+            }
+        }
+
         private void RemoveSpringEffect()
         {
             try { _springEffect?.Stop(); } catch { }
             try { _springEffect?.Dispose(); } catch { }
             _springEffect = null;
+            _springAxes = null;
+            _lastSpringCoeff = -1;
         }
 
         private void EnsureStickShakerEffect(Joystick js, bool stall, bool overspeed)

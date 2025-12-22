@@ -87,6 +87,16 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
     - Positive/NegativeSaturation: 10000
   - Starts with loop count 1 (infinite). Properly stopped/disposed on removal.
 
+- Dynamic Spring
+  - Enabled only when both `CenteredSpring` and `DynamicSpring` are true in the active profile.
+  - Stiffness is updated continuously based on airspeed from `SimVariableData`:
+    - Normalized factor = clamp(`IAS` / `Barber`, 0..1). If `Barber <= 0`, fallback uses 250 KIAS as the max reference.
+    - Coefficients (`PositiveCoefficient`/`NegativeCoefficient`) are mapped linearly from 2000 (soft at low speed) to 10000 (firm at barber-pole speed).
+    - Updates are throttled: coefficients are re-applied only when the change is >= 100 to reduce DirectInput churn.
+  - Implementation details:
+    - Reuses the existing spring effect via `SetParameters` to update the `ConditionSet` in place; axes are preserved.
+    - Axis offsets used by the spring are cached on creation and reused for updates; caches are cleared on device or effect removal.
+
 - Stick Shaker
   - Enabled when `profile.StickShaker == true`.
   - Trigger conditions:
@@ -115,10 +125,9 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 ## Current Limitations / TODOs
 
-- Dynamic spring tuning (e.g., based on airspeed) not yet implemented.
 - Axis discovery assumes Usage 48/49 for fallback; needs broader validation.
-- Effect parameterization is static; expose tuning via profile settings.
-- Profile changes do not yet adjust spring coefficients or shaker frequency beyond enable/disable.
+- Effect parameterization is static; expose tuning via profile settings (e.g., min/max spring coefficients, non-linear response curve).
+- Profile changes do not yet adjust shaker frequency beyond enable/disable.
 
 ## Disposal and Resource Management
 
@@ -131,6 +140,8 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 ## Next Steps
 
-- Add dynamic tuning of spring based on `SimVariableData` (airspeed, trim, etc.).
+- Expose dynamic spring tuning parameters in profiles:
+  - Configure min/max stiffness and update threshold.
+  - Optionally support non-linear curves (e.g., quadratic or piecewise) and separate per-axis gains.
 - Enhance axis mapping and normalization across devices.
 - Improve progress reporting granularity (errors, device capability summaries).
