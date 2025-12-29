@@ -73,6 +73,9 @@ namespace TDXAirMechanic
                     comboBoxJoysticks.DataSource = data.Joysticks;
                     comboBoxJoysticks.SelectedIndex = 0;
                     break;
+                case MechanicProgressCommand.SetFlightStatus:
+                    FlightStatusLabel.Text = data.Status;
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(data.Command), data.Command, null);
             }
@@ -279,6 +282,9 @@ namespace TDXAirMechanic
 
             // Populate profiles dropdown from disk
             RefreshProfilesDropdown();
+
+            // Initialize flight status label
+            FlightStatusLabel.Text = "No Flight Loaded";
         }
 
         private void TrimSwitch_CheckedChanged(object? sender, EventArgs e)
@@ -306,7 +312,8 @@ namespace TDXAirMechanic
             if (_isSimConnectClicked)
             {
                 var progress = new Progress<AirplaneProfile>(SimConnectProgressReporter);
-                _simConnectService.Start(progress, this.Handle);
+                var flightStatus = new Progress<MechanicProgress>(MechanicProgressReporter);
+                _simConnectService.Start(progress, this.Handle, flightStatus);
             }
             else
             {

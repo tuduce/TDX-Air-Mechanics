@@ -26,12 +26,25 @@ namespace TDXAirMechanic.Services
         // This will be used to report data back to the UI thread safely
         private IProgress<AirplaneProfile>? _progressReporter;
 
+        // Report flight loaded status to UI
+        private IProgress<MechanicProgress>? _flightStatusReporter;
+
+        // Track current flight loaded state
+        private volatile bool _flightLoaded = false;
+
         // A flag to detect redundant calls to Dispose
         private bool _disposed = false;
 
         // Define data requests and definitions
         private enum DEFINITIONS { BasicInfo }
         private enum DATA_REQUESTS { RequestBasicInfo }
+
+        // System event IDs as enum to match API signature
+        private enum SYSTEM_EVENT_ID
+        {
+            SimStart = 1,
+            SimStop = 2
+        }
 
         // This is the structure that will be sent to SimConnect
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Ansi, Pack = 1)]
@@ -51,11 +64,12 @@ namespace TDXAirMechanic.Services
 
         private readonly MechanicService _mechanicService = mechanicService;
 
-        public void Start(IProgress<AirplaneProfile> progress, IntPtr windowHandle)
+        public void Start(IProgress<AirplaneProfile> progress, IntPtr windowHandle, IProgress<MechanicProgress>? flightStatusProgress = null)
         {
             if (_simConnectTask != null) return; // Already running
 
             _progressReporter = progress;
+            _flightStatusReporter = flightStatusProgress;
             _cts = new CancellationTokenSource();
 
             // Use Task.Run to start the SimConnect logic on a background thread
@@ -107,6 +121,11 @@ namespace TDXAirMechanic.Services
                 _simConnect.OnRecvQuit += OnRecvQuit;
                 _simConnect.OnRecvException += OnRecvException;
                 _simConnect.OnRecvSimobjectData += OnRecvSimobjectData;
+                _simConnect.OnRecvEvent += OnRecvEvent;
+
+                // Subscribe to sys events: Flight loaded/unloaded
+                _simConnect.SubscribeToSystemEvent(SYSTEM_EVENT_ID.SimStart, "SimStart");
+                _simConnect.SubscribeToSystemEvent(SYSTEM_EVENT_ID.SimStop, "SimStop");
 
                 // --- Main Loop ---
                 while (!token.IsCancellationRequested)
@@ -175,6 +194,29 @@ namespace TDXAirMechanic.Services
             _simConnect?.RequestDataOnSimObject(DATA_REQUESTS.RequestBasicInfo, DEFINITIONS.BasicInfo, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, 0, 0, 0, 0);
         }
 
+        private void OnRecvEvent(SimConnect sender, SIMCONNECT_RECV_EVENT evt)
+        {
+            // SimStart/SimStop events can fire multiple times; maintain idempotent state
+            if (evt.uEventID == (uint)SYSTEM_EVENT_ID.SimStart)
+            {
+                if (!_flightLoaded)
+                {
+                    _flightLoaded = true;
+                    _mechanicService.SetFlightLoaded(true);
+                    _flightStatusReporter?.Report(new MechanicProgress { Command = MechanicProgressCommand.SetFlightStatus, Status = "Flight Loaded - Effects Active" });
+                }
+            }
+            else if (evt.uEventID == (uint)SYSTEM_EVENT_ID.SimStop)
+            {
+                if (_flightLoaded)
+                {
+                    _flightLoaded = false;
+                    _mechanicService.SetFlightLoaded(false);
+                    _flightStatusReporter?.Report(new MechanicProgress { Command = MechanicProgressCommand.SetFlightStatus, Status = "No Flight Loaded" });
+                }
+            }
+        }
+
         private void OnRecvSimobjectData(SimConnect sender, SIMCONNECT_RECV_SIMOBJECT_DATA data)
         {
             if (data.dwRequestID == (uint)DATA_REQUESTS.RequestBasicInfo)
@@ -234,6 +276,11 @@ namespace TDXAirMechanic.Services
                 _simConnect.Dispose();
                 _simConnect = null;
                 Debug.WriteLine("SimConnect Disconnected.");
+
+                // Reset flight status
+                _flightLoaded = false;
+                _mechanicService.SetFlightLoaded(false);
+                _flightStatusReporter?.Report(new MechanicProgress { Command = MechanicProgressCommand.SetFlightStatus, Status = "No Flight Loaded" });
             }
         }
 

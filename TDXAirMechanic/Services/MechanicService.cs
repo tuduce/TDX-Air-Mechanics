@@ -41,6 +41,9 @@ namespace TDXAirMechanic.Services
         private Action<int>? _buttonCaptureCallback;
         private readonly HashSet<int> _pressedCaptureButtons = new();
 
+        // Flight loaded state gates whether effects are active
+        private volatile bool _effectsEnabled = false;
+
         public MechanicService(IEffectsService effects)
         {
             _directInput = new();
@@ -55,6 +58,26 @@ namespace TDXAirMechanic.Services
 
             _progressReporter = (IProgress<MechanicProgress>?)progress;
             _mechanicTask = Task.Run(DoMechanicWorkAsync);
+        }
+
+        // Called by UI to reflect SimStart/SimStop
+        public void SetFlightLoaded(bool loaded)
+        {
+            _effectsEnabled = loaded;
+
+            if (!loaded)
+            {
+                // Stop and clear all effects immediately
+                _effects.ResetAll();
+            }
+            else
+            {
+                // Re-apply current profile if any to create necessary effects
+                if (_activeProfile != null)
+                {
+                    _effects.ApplyProfile(_activeProfile);
+                }
+            }
         }
 
         // UI can begin capture of next joystick button press
@@ -74,7 +97,10 @@ namespace TDXAirMechanic.Services
         public void SetActiveProfile(AirplaneProfile profile)
         {
             _activeProfile = profile;
-            _effects.ApplyProfile(profile);
+            if (_effectsEnabled)
+            {
+                _effects.ApplyProfile(profile);
+            }
             Debug.WriteLine($"[Mechanic] Active profile set: Model={profile.Model}, Centered={profile.CenteredSpring}, Dynamic={profile.DynamicSpring}, Shaker={profile.StickShaker}, GearVibration={profile.GearVibration}");
         }
 
@@ -144,9 +170,9 @@ namespace TDXAirMechanic.Services
             try { joystick.SendForceFeedbackCommand(ForceFeedbackCommand.StopAll); } catch { }
             try { joystick.SendForceFeedbackCommand(ForceFeedbackCommand.Reset); } catch { }
 
-            // Attach to effects manager and apply current profile
+            // Attach to effects manager and apply current profile only if effects enabled
             _effects.AttachDevice(joystick);
-            if (_activeProfile != null)
+            if (_effectsEnabled && _activeProfile != null)
             {
                 _effects.ApplyProfile(_activeProfile);
             }
@@ -231,6 +257,8 @@ namespace TDXAirMechanic.Services
 
         private void PollTrimButtons()
         {
+            if (!_effectsEnabled) return; // no flight loaded -> ignore inputs
+
             var js = _activeJoystick;
             var profile = _activeProfile;
             if (js == null || profile == null) return;
@@ -309,6 +337,7 @@ namespace TDXAirMechanic.Services
 
         private void ProcessSimData(SimVariableData data)
         {
+            if (!_effectsEnabled) return; // ignore sim data when no flight loaded
             // Forward to effects manager. It decides what to do based on current profile
             _effects.Update(data);
         }

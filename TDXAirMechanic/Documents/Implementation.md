@@ -24,6 +24,8 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Gear vibration UX:
     - Toggle `Gear Vibrations` in the Effects tab to enable/disable vibration when gear is down.
     - Persisted per aircraft in the profile JSON via `GearVibration`.
+  - Flight state UX (SimStart/SimStop):
+    - `FlightStatusLabel` displays current state ("No Flight Loaded" or "Flight Loaded - Effects Active").
 
 - Services
   - `MechanicService` (device management, sim data pipeline; delegates effects to `IEffectsService`).
@@ -151,6 +153,38 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Uses safe joystick access (`NativePointer` guard) to avoid calling DirectInput on disposed devices during shutdown.
   - Captures a local joystick reference for effect creation/update to avoid races.
 
+## SimStart/SimStop Flight State Handling
+
+- Overview
+  - Effects are active only when a flight is loaded (SimStart). When no flight is loaded (SimStop or disconnect), all effects are disabled and cleared.
+
+- Service Integration
+  - `SimConnectService` subscribes to system events using `SubscribeToSystemEvent(SYSTEM_EVENT_ID.SimStart, "SimStart")` and `SubscribeToSystemEvent(SYSTEM_EVENT_ID.SimStop, "SimStop")`.
+  - On `OnRecvEvent`:
+    - For `SimStart`: sets an internal `_flightLoaded` flag, calls `MechanicService.SetFlightLoaded(true)`, and reports `MechanicProgressCommand.SetFlightStatus` = "Flight Loaded - Effects Active" to the UI.
+    - For `SimStop`: clears `_flightLoaded`, calls `MechanicService.SetFlightLoaded(false)`, and reports `SetFlightStatus` = "No Flight Loaded".
+  - On `Disconnect()`: resets flight state to not loaded and reports "No Flight Loaded".
+
+- Mechanic Gating
+  - `MechanicService` maintains `_effectsEnabled` which mirrors flight state.
+  - When `_effectsEnabled == false`:
+    - `ProcessSimData` returns without updating effects.
+    - `PollTrimButtons` returns early, ignoring input.
+    - `SetActiveProfile` stores the profile but defers `ApplyProfile`.
+    - `SetFlightLoaded(false)` immediately calls `_effects.ResetAll()` to stop and clear all effects.
+  - When `_effectsEnabled == true`:
+    - `SetFlightLoaded(true)` re-applies the current profile to create effects.
+    - `ProcessSimData` and `PollTrimButtons` operate normally.
+
+- UI Feedback
+  - `MainForm` wires a `Progress<MechanicProgress>` to `MechanicProgressReporter`.
+  - Handles `MechanicProgressCommand.SetFlightStatus` by updating `FlightStatusLabel`.
+  - Initializes `FlightStatusLabel` to "No Flight Loaded" on form load.
+
+- Idempotency
+  - Multiple `SimStart` events are handled safely: state is set to loaded only once and effects re-application occurs without duplication.
+  - Multiple `SimStop` events are handled safely: state remains not loaded and effects are already cleared.
+
 ## Threading and Safety
 
 - Single writer/reader channel for `SimVariableData` ensures minimal contention.
@@ -167,6 +201,10 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 ## Recent Changes
 
+- SimStart/SimStop flight state implemented:
+  - Subscribed to system events in `SimConnectService` and bridged state to `MechanicService` via `SetFlightLoaded(bool)`.
+  - Effects gated in `MechanicService`; cleared on SimStop/disconnect, applied only after SimStart.
+  - UI `FlightStatusLabel` shows current flight state via `MechanicProgressCommand.SetFlightStatus`.
 - Trim feature implemented end-to-end:
   - UI: visibility toggling with `CenteredSpring`, joystick button capture into textboxes, persisted to profile JSON.
   - Model: added `TrimEnabled`, four trim button indices, `TrimStep`, `MaxTrimOffset`.

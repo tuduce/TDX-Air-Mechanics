@@ -10,7 +10,8 @@ namespace TDXAirMechanic.Model
     public enum MechanicProgressCommand
     {
         SetStatus,
-        SetJoysticks
+        SetJoysticks,
+        SetFlightStatus
     }
 
     public class MechanicProgress

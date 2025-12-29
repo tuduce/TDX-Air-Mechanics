@@ -39,6 +39,7 @@
             labelJoystickStatus = new MaterialSkin.Controls.MaterialLabel();
             labelAircraftName = new MaterialSkin.Controls.MaterialLabel();
             tabPageEffects = new TabPage();
+            GearVibratesSwitch = new MaterialSkin.Controls.MaterialSwitch();
             JoyBtnExplainLabel = new MaterialSkin.Controls.MaterialLabel();
             RollRightTextBox = new MaterialSkin.Controls.MaterialTextBox();
             RollRightLabel = new MaterialSkin.Controls.MaterialLabel();
@@ -59,9 +60,10 @@
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
             comboBoxJoysticks = new MaterialSkin.Controls.MaterialComboBox();
             tabPageSettings = new TabPage();
-            GearVibratesSwitch = new MaterialSkin.Controls.MaterialSwitch();
+            FlightStatusLabel = new MaterialSkin.Controls.MaterialLabel();
             materialTabControl1.SuspendLayout();
             tabPageDashboard.SuspendLayout();
+            materialCard2.SuspendLayout();
             materialCard1.SuspendLayout();
             tabPageEffects.SuspendLayout();
             tabPageDevices.SuspendLayout();
@@ -101,6 +103,7 @@
             // materialCard2
             // 
             materialCard2.BackColor = Color.FromArgb(255, 255, 255);
+            materialCard2.Controls.Add(FlightStatusLabel);
             materialCard2.Depth = 0;
             materialCard2.ForeColor = Color.FromArgb(222, 0, 0, 0);
             materialCard2.Location = new Point(17, 104);
@@ -203,6 +206,21 @@
             tabPageEffects.Size = new Size(786, 340);
             tabPageEffects.TabIndex = 1;
             tabPageEffects.Text = "Effects";
+            // 
+            // GearVibratesSwitch
+            // 
+            GearVibratesSwitch.AutoSize = true;
+            GearVibratesSwitch.Depth = 0;
+            GearVibratesSwitch.Location = new Point(13, 350);
+            GearVibratesSwitch.Margin = new Padding(0);
+            GearVibratesSwitch.MouseLocation = new Point(-1, -1);
+            GearVibratesSwitch.MouseState = MaterialSkin.MouseState.HOVER;
+            GearVibratesSwitch.Name = "GearVibratesSwitch";
+            GearVibratesSwitch.Ripple = true;
+            GearVibratesSwitch.Size = new Size(165, 37);
+            GearVibratesSwitch.TabIndex = 13;
+            GearVibratesSwitch.Text = "Gear vibrations";
+            GearVibratesSwitch.UseVisualStyleBackColor = true;
             // 
             // JoyBtnExplainLabel
             // 
@@ -518,20 +536,17 @@
             tabPageSettings.Text = "Settings";
             tabPageSettings.UseVisualStyleBackColor = true;
             // 
-            // GearVibratesSwitch
+            // FlightStatusLabel
             // 
-            GearVibratesSwitch.AutoSize = true;
-            GearVibratesSwitch.Depth = 0;
-            GearVibratesSwitch.Location = new Point(13, 350);
-            GearVibratesSwitch.Margin = new Padding(0);
-            GearVibratesSwitch.MouseLocation = new Point(-1, -1);
-            GearVibratesSwitch.MouseState = MaterialSkin.MouseState.HOVER;
-            GearVibratesSwitch.Name = "GearVibratesSwitch";
-            GearVibratesSwitch.Ripple = true;
-            GearVibratesSwitch.Size = new Size(165, 37);
-            GearVibratesSwitch.TabIndex = 13;
-            GearVibratesSwitch.Text = "Gear vibrations";
-            GearVibratesSwitch.UseVisualStyleBackColor = true;
+            FlightStatusLabel.AutoSize = true;
+            FlightStatusLabel.Depth = 0;
+            FlightStatusLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            FlightStatusLabel.Location = new Point(17, 14);
+            FlightStatusLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            FlightStatusLabel.Name = "FlightStatusLabel";
+            FlightStatusLabel.Size = new Size(89, 19);
+            FlightStatusLabel.TabIndex = 3;
+            FlightStatusLabel.Text = "Flight status";
             // 
             // MainForm
             // 
@@ -548,6 +563,8 @@
             Shown += MainForm_Shown;
             materialTabControl1.ResumeLayout(false);
             tabPageDashboard.ResumeLayout(false);
+            materialCard2.ResumeLayout(false);
+            materialCard2.PerformLayout();
             materialCard1.ResumeLayout(false);
             materialCard1.PerformLayout();
             tabPageEffects.ResumeLayout(false);
@@ -589,5 +606,6 @@
         private MaterialSkin.Controls.MaterialLabel PitchDownLabel;
         private MaterialSkin.Controls.MaterialLabel JoyBtnExplainLabel;
         private MaterialSkin.Controls.MaterialSwitch GearVibratesSwitch;
+        private MaterialSkin.Controls.MaterialLabel FlightStatusLabel;
     }
 }
