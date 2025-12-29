@@ -14,6 +14,8 @@ namespace TDXAirMechanic.Services
 
         private Effect? _springEffect;
         private Effect? _stickShakerEffect; // single periodic effect applied on X/Y
+        private Effect? _gearVibrationEffect1; // first sine wave for gear down vibration
+        private Effect? _gearVibrationEffect2; // second sine wave for gear down vibration
 
         // Cache axes used for spring updates and last applied stiffness to avoid churn
         private int[]? _springAxes;
@@ -80,6 +82,10 @@ namespace TDXAirMechanic.Services
             // Stick shaker (lazy-created on Update when actually needed)
             if (_profile?.StickShaker != true)
                 RemoveStickShakerEffect();
+
+            // Gear vibration should be stopped if disabled in profile
+            if (_profile?.GearVibration != true)
+                RemoveGearVibrationEffects();
         }
 
         public void Update(SimVariableData data)
@@ -110,11 +116,27 @@ namespace TDXAirMechanic.Services
                     RemoveStickShakerEffect();
                 }
             }
+
+            // Gear vibration when gear is down, and aircraft not on ground
+            if (_profile.GearVibration)
+            {
+                bool gearDown = data.GearPosition >= 0.5; // threshold
+                bool onGround = data.OnGround >= 0.5;
+                if (gearDown && !onGround)
+                {
+                    EnsureGearVibrationEffects(js, data);
+                }
+                else
+                {
+                    RemoveGearVibrationEffects();
+                }
+            }
         }
 
         public void ResetAll()
         {
             RemoveStickShakerEffect();
+            RemoveGearVibrationEffects();
             RemoveSpringEffect();
             _trimOffsetX = 0;
             _trimOffsetY = 0;
@@ -511,6 +533,151 @@ namespace TDXAirMechanic.Services
             try { _stickShakerEffect?.Stop(); } catch { }
             try { _stickShakerEffect?.Dispose(); } catch { }
             _stickShakerEffect = null;
+        }
+
+        private void EnsureGearVibrationEffects(Joystick js, SimVariableData data)
+        {
+            try
+            {
+                var periodicInfo = js.GetEffects(EffectType.Periodic).FirstOrDefault();
+                if (periodicInfo == null)
+                {
+                    Debug.WriteLine("[Effects] Periodic effect not supported for gear vibration.");
+                    return;
+                }
+
+                // Discover axes
+                var axisObjects = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
+                    .OrderBy(a => a.Usage)
+                    .ToList();
+                if (axisObjects.Count == 0)
+                {
+                    axisObjects = js.GetObjects(DeviceObjectTypeFlags.Axis)
+                        .Where(a => a.Usage == 48 || a.Usage == 49)
+                        .OrderBy(a => a.Usage)
+                        .ToList();
+                }
+                if (axisObjects.Count == 0)
+                    return;
+
+                int[] axes = axisObjects.Select(a => a.Offset).ToArray();
+                int[] dirs = new int[axes.Length];
+
+                // Compute speed factor [0..1] using barber pole if available, else 250 KIAS reference
+                double ias = Math.Max(0, data.IAS);
+                double refSpeed = (data.Barber > 0) ? data.Barber : 250.0;
+                double factor = refSpeed > 0 ? Math.Clamp(ias / refSpeed, 0.0, 1.0) : 0.0;
+
+                // Map to magnitudes (max 1500 and 500 respectively)
+                int mag1 = (int)Math.Round(400 * factor);
+                int mag2 = (int)Math.Round(200 * factor);
+
+                // Wave 1: lower frequency, magnitude up to 1500
+                if (_gearVibrationEffect1 == null)
+                {
+                    var ep1 = new EffectParameters
+                    {
+                        Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                        Duration = int.MaxValue,
+                        SamplePeriod = 0,
+                        Gain = 10000,
+                        TriggerButton = -1,
+                        TriggerRepeatInterval = 0
+                    };
+                    ep1.SetAxes(axes, dirs);
+                    ep1.Parameters = new PeriodicForce
+                    {
+                        Magnitude = mag1,
+                        Offset = 0,
+                        Phase = 0,
+                        Period = 150000 // 150 ms
+                    };
+                    _gearVibrationEffect1 = new Effect(js, periodicInfo.Guid, ep1);
+                    _gearVibrationEffect1.Start(1);
+                }
+                else
+                {
+                    var update1 = new EffectParameters
+                    {
+                        Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                        Duration = int.MaxValue,
+                        SamplePeriod = 0,
+                        Gain = 10000,
+                        TriggerButton = -1,
+                        TriggerRepeatInterval = 0,
+                        Parameters = new PeriodicForce
+                        {
+                            Magnitude = mag1,
+                            Offset = 0,
+                            Phase = 0,
+                            Period = 50000
+                        }
+                    };
+                    update1.SetAxes(axes, dirs);
+                    _gearVibrationEffect1.SetParameters(update1, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                }
+
+                // Wave 2: higher frequency, magnitude up to 500
+                if (_gearVibrationEffect2 == null)
+                {
+                    var ep2 = new EffectParameters
+                    {
+                        Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                        Duration = int.MaxValue,
+                        SamplePeriod = 0,
+                        Gain = 10000,
+                        TriggerButton = -1,
+                        TriggerRepeatInterval = 0
+                    };
+                    ep2.SetAxes(axes, dirs);
+                    ep2.Parameters = new PeriodicForce
+                    {
+                        Magnitude = mag2,
+                        Offset = 0,
+                        Phase = 18000, // phase shift to avoid synchronous peaks
+                        Period = 22000 // 22 ms
+                    };
+                    _gearVibrationEffect2 = new Effect(js, periodicInfo.Guid, ep2);
+                    _gearVibrationEffect2.Start(1);
+                }
+                else
+                {
+                    var update2 = new EffectParameters
+                    {
+                        Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                        Duration = int.MaxValue,
+                        SamplePeriod = 0,
+                        Gain = 10000,
+                        TriggerButton = -1,
+                        TriggerRepeatInterval = 0,
+                        Parameters = new PeriodicForce
+                        {
+                            Magnitude = mag2,
+                            Offset = 0,
+                            Phase = 18000,
+                            Period = 22000
+                        }
+                    };
+                    update2.SetAxes(axes, dirs);
+                    _gearVibrationEffect2.SetParameters(update2, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex + "[Effects] Failed to ensure/update gear vibration");
+                RemoveGearVibrationEffects();
+            }
+        }
+
+        private void RemoveGearVibrationEffects()
+        {
+            try { _gearVibrationEffect1?.Stop(); } catch { }
+            try { _gearVibrationEffect1?.Dispose(); } catch { }
+            _gearVibrationEffect1 = null;
+
+            try { _gearVibrationEffect2?.Stop(); } catch { }
+            try { _gearVibrationEffect2?.Dispose(); } catch { }
+            _gearVibrationEffect2 = null;
         }
 
         public void Dispose()

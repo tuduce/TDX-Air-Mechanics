@@ -21,6 +21,9 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
     - Persists trim enable state and mappings to the selected profile JSON.
     - Auto-selects the aircraft model profile when the simulator connects and reports a new model.
     - Saving a new profile uses the active simulator model name when available; otherwise uses the currently selected profile name.
+  - Gear vibration UX:
+    - Toggle `Gear Vibrations` in the Effects tab to enable/disable vibration when gear is down.
+    - Persisted per aircraft in the profile JSON via `GearVibration`.
 
 - Services
   - `MechanicService` (device management, sim data pipeline; delegates effects to `IEffectsService`).
@@ -37,9 +40,9 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 - Models
   - `AirplaneProfile`:
     - Identity: `Model`.
-    - Effects: `CenteredSpring`, `DynamicSpring`, `StickShaker`.
+    - Effects: `CenteredSpring`, `DynamicSpring`, `StickShaker`, `GearVibration`.
     - Trim: `TrimEnabled`, `PitchTrimUpButton`, `PitchTrimDownButton`, `RollTrimLeftButton`, `RollTrimRightButton` (button indices, -1 disabled), `TrimStep` (device units per nudge), `MaxTrimOffset` (absolute clamp per axis).
-  - `SimVariableData`: Simulator values pushed to the mechanic pipeline.
+  - `SimVariableData`: Simulator values pushed to the mechanic pipeline. Includes `IAS`, `Barber`, `OnGround`, and `GearPosition` (0..1).
   - `MechanicProgress`: Progress reporting contract (status updates, joystick names, commands).
   - `SimCommand`: Commands for simulator operations (future expansion).
 
@@ -126,6 +129,14 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Implemented with a periodic effect (`PeriodicForce`) on X/Y axes.
   - Magnitude/period tuned based on stall vs overspeed; parameters updated in-place with `SetParameters`.
 
+- Gear Vibration (new)
+  - Enabled when `profile.GearVibration == true` and `GearPosition >= 0.5` (gear down).
+  - Disabled automatically when gear is up or the aircraft is on the ground (`OnGround >= 0.5`).
+  - Implemented using two `PeriodicForce` effects (sine waves) on X/Y axes:
+    - Wave 1: lower frequency (~150 ms period), magnitude proportional to airspeed, up to 400.
+    - Wave 2: higher frequency (~22 ms period), phase-shifted, magnitude proportional to airspeed, up to 200.
+  - Magnitude scaling uses `IAS` normalized by `Barber` pole speed when available, otherwise a 250 KIAS reference. Effects are updated in-place when speed changes.
+
 - Trim
   - API: `IEffectsService.NudgeTrim(int pitchDelta, int rollDelta)`.
   - Logic:
@@ -167,6 +178,10 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Auto-select the aircraft model profile on simulator connect.
   - Edits save to the currently selected profile file (no implicit model overrides).
   - "Save New Profile" targets the active simulator model when available; otherwise uses the selected profile name.
+- Landing gear vibration implemented:
+  - UI toggle `Gear Vibrations` bound to `AirplaneProfile.GearVibration` and persisted per aircraft.
+  - Two sine waves combined; magnitudes scale with airspeed up to 1500 and 500 respectively.
+  - Active only when gear is down and aircraft is airborne; stops when gear raised or on ground.
 
 ## Current Limitations / TODOs
 
@@ -187,6 +202,7 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 ## Next Steps
 
+- Display the force on the 2 joystick axes in the dashboard
 - Expose dynamic spring tuning parameters in profiles:
   - Configure min/max stiffness and update threshold.
   - Optionally support non-linear curves (e.g., quadratic or piecewise) and separate per-axis gains.

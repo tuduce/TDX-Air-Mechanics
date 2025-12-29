@@ -14,5 +14,8 @@ namespace TDXAirMechanic.Model
         public double OnGround { get; set; }
         public double GroundType { get; set; }
         public double GroundSpeed { get; set; }
+
+        // Landing gear position: 1 -> down/extended, 0 -> up/retracted (range 0..1)
+        public double GearPosition { get; set; }
     }
 }

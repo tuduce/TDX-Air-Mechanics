@@ -46,6 +46,7 @@ namespace TDXAirMechanic.Services
             public double onGround;
             public double groundType;
             public double groundSpeed;
+            public double gearHandlePosition; // 0 up, 1 down
         }
 
         private readonly MechanicService _mechanicService = mechanicService;
@@ -166,6 +167,7 @@ namespace TDXAirMechanic.Services
             _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "SIM ON GROUND", "Boolean", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
             _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "SURFACE TYPE", "Enum", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
             _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "GROUND VELOCITY", "meters per second", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            _simConnect?.AddToDataDefinition(DEFINITIONS.BasicInfo, "GEAR HANDLE POSITION", "Boolean", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
 
             _simConnect?.RegisterDataDefineStruct<SimResponse>(DEFINITIONS.BasicInfo);
 
@@ -195,7 +197,8 @@ namespace TDXAirMechanic.Services
                     StallWarning = simResponse.stallWarning,
                     OnGround = simResponse.onGround,
                     GroundType = simResponse.groundType,
-                    GroundSpeed = simResponse.groundSpeed
+                    GroundSpeed = simResponse.groundSpeed,
+                    GearPosition = simResponse.gearHandlePosition
                 });
 
                 // Report progress, which will safely update the UI on the UI thread

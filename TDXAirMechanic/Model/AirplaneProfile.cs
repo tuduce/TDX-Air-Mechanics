@@ -14,6 +14,7 @@ namespace TDXAirMechanic.Model
         public bool CenteredSpring { get; set; }
         public bool DynamicSpring { get; set; }
         public bool StickShaker { get; set; }
+        public bool GearVibration { get; set; } // Vibrate stick when landing gear is lowered
 
         // Trim enable state (UI `TrimSwitch`); trim acts only if CenteredSpring is also enabled.
         public bool TrimEnabled { get; set; } = true;
@@ -27,7 +28,7 @@ namespace TDXAirMechanic.Model
 
         // Trim step in device units (Effect Condition Offset). Small increments per press.
         // Typical DirectInput range is device-dependent; start conservatively.
-        public int TrimStep { get; set; } = 200; // per press
+        public int TrimStep { get; set; } = 100; // per press
 
         // Optional limits to avoid excessive trim shifts
         public int MaxTrimOffset { get; set; } = 4000; // absolute cap per axis

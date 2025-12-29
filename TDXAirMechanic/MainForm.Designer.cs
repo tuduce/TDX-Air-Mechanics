@@ -59,6 +59,7 @@
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
             comboBoxJoysticks = new MaterialSkin.Controls.MaterialComboBox();
             tabPageSettings = new TabPage();
+            GearVibratesSwitch = new MaterialSkin.Controls.MaterialSwitch();
             materialTabControl1.SuspendLayout();
             tabPageDashboard.SuspendLayout();
             materialCard1.SuspendLayout();
@@ -179,6 +180,7 @@
             // 
             tabPageEffects.AutoScroll = true;
             tabPageEffects.BackColor = Color.WhiteSmoke;
+            tabPageEffects.Controls.Add(GearVibratesSwitch);
             tabPageEffects.Controls.Add(JoyBtnExplainLabel);
             tabPageEffects.Controls.Add(RollRightTextBox);
             tabPageEffects.Controls.Add(RollRightLabel);
@@ -516,6 +518,21 @@
             tabPageSettings.Text = "Settings";
             tabPageSettings.UseVisualStyleBackColor = true;
             // 
+            // GearVibratesSwitch
+            // 
+            GearVibratesSwitch.AutoSize = true;
+            GearVibratesSwitch.Depth = 0;
+            GearVibratesSwitch.Location = new Point(13, 350);
+            GearVibratesSwitch.Margin = new Padding(0);
+            GearVibratesSwitch.MouseLocation = new Point(-1, -1);
+            GearVibratesSwitch.MouseState = MaterialSkin.MouseState.HOVER;
+            GearVibratesSwitch.Name = "GearVibratesSwitch";
+            GearVibratesSwitch.Ripple = true;
+            GearVibratesSwitch.Size = new Size(165, 37);
+            GearVibratesSwitch.TabIndex = 13;
+            GearVibratesSwitch.Text = "Gear vibrations";
+            GearVibratesSwitch.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -571,5 +588,6 @@
         private MaterialSkin.Controls.MaterialTextBox PitchDownTextBox;
         private MaterialSkin.Controls.MaterialLabel PitchDownLabel;
         private MaterialSkin.Controls.MaterialLabel JoyBtnExplainLabel;
+        private MaterialSkin.Controls.MaterialSwitch GearVibratesSwitch;
     }
 }

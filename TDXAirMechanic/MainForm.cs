@@ -155,6 +155,7 @@ namespace TDXAirMechanic
                 switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
                 switchDynamicSpring.Checked = profile.DynamicSpring && SwitchCenterSpring.Checked;
                 switchStickShaker.Checked = profile.StickShaker;
+                GearVibratesSwitch.Checked = profile.GearVibration;
 
                 // Trim
                 TrimSwitch.Checked = profile.TrimEnabled;
@@ -204,6 +205,7 @@ namespace TDXAirMechanic
             _currentProfile.CenteredSpring = SwitchCenterSpring.Checked;
             _currentProfile.DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked; // only valid when centered
             _currentProfile.StickShaker = switchStickShaker.Checked;
+            _currentProfile.GearVibration = GearVibratesSwitch.Checked;
 
             // Trim
             _currentProfile.TrimEnabled = TrimSwitch.Checked;
@@ -260,6 +262,7 @@ namespace TDXAirMechanic
             // Hook change events for effects controls
             switchDynamicSpring.CheckedChanged += switchDynamicSpring_CheckedChanged;
             switchStickShaker.CheckedChanged += switchStickShaker_CheckedChanged;
+            GearVibratesSwitch.CheckedChanged += GearVibratesSwitch_CheckedChanged;
 
             TrimSwitch.CheckedChanged += TrimSwitch_CheckedChanged;
             PitchUpTextBox.TextChanged += TrimTextBox_TextChanged;
@@ -342,6 +345,11 @@ namespace TDXAirMechanic
             UpdateCurrentProfileFromUi();
         }
 
+        private void GearVibratesSwitch_CheckedChanged(object? sender, EventArgs e)
+        {
+            UpdateCurrentProfileFromUi();
+        }
+
         private void comboBoxJoysticks_SelectedIndexChanged(object? sender, EventArgs e)
         {
             if (!_uiReadyForAcquire) return;
@@ -381,6 +389,7 @@ namespace TDXAirMechanic
                 CenteredSpring = SwitchCenterSpring.Checked,
                 DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked,
                 StickShaker = switchStickShaker.Checked,
+                GearVibration = GearVibratesSwitch.Checked,
                 TrimEnabled = TrimSwitch.Checked,
                 PitchTrimUpButton = ParseButtonIndex(PitchUpTextBox),
                 PitchTrimDownButton = ParseButtonIndex(PitchDownTextBox),
