@@ -569,8 +569,8 @@ namespace TDXAirMechanic.Services
                 double factor = refSpeed > 0 ? Math.Clamp(ias / refSpeed, 0.0, 1.0) : 0.0;
 
                 // Map to magnitudes (max 1500 and 500 respectively)
-                int mag1 = (int)Math.Round(400 * factor);
-                int mag2 = (int)Math.Round(200 * factor);
+                int mag1 = (int)Math.Round(1500 * factor);
+                int mag2 = (int)Math.Round(300 * factor);
 
                 // Wave 1: lower frequency, magnitude up to 1500
                 if (_gearVibrationEffect1 == null)
@@ -590,7 +590,7 @@ namespace TDXAirMechanic.Services
                         Magnitude = mag1,
                         Offset = 0,
                         Phase = 0,
-                        Period = 150000 // 150 ms
+                        Period = 1000000 // us
                     };
                     _gearVibrationEffect1 = new Effect(js, periodicInfo.Guid, ep1);
                     _gearVibrationEffect1.Start(1);
@@ -610,7 +610,7 @@ namespace TDXAirMechanic.Services
                             Magnitude = mag1,
                             Offset = 0,
                             Phase = 0,
-                            Period = 50000
+                            Period = 300000 // us
                         }
                     };
                     update1.SetAxes(axes, dirs);
