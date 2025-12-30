@@ -24,6 +24,10 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Gear vibration UX:
     - Toggle `Gear Vibrations` in the Effects tab to enable/disable vibration when gear is down.
     - Persisted per aircraft in the profile JSON via `GearVibration`.
+  - Ground vibration UX (new):
+    - Toggle `Ground Vibrations` in the Effects tab to enable/disable ground roll vibrations.
+    - Persisted per aircraft in the profile JSON via `GroundVibration`.
+    - Active only while `OnGround >= 0.5`; disabled automatically when airborne.
   - Flight state UX (SimStart/SimStop):
     - `FlightStatusLabel` displays current state ("No Flight Loaded" or "Flight Loaded - Effects Active").
 
@@ -42,9 +46,9 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 - Models
   - `AirplaneProfile`:
     - Identity: `Model`.
-    - Effects: `CenteredSpring`, `DynamicSpring`, `StickShaker`, `GearVibration`.
+    - Effects: `CenteredSpring`, `DynamicSpring`, `StickShaker`, `GearVibration`, `GroundVibration`.
     - Trim: `TrimEnabled`, `PitchTrimUpButton`, `PitchTrimDownButton`, `RollTrimLeftButton`, `RollTrimRightButton` (button indices, -1 disabled), `TrimStep` (device units per nudge), `MaxTrimOffset` (absolute clamp per axis).
-  - `SimVariableData`: Simulator values pushed to the mechanic pipeline. Includes `IAS`, `Barber`, `OnGround`, and `GearPosition` (0..1).
+  - `SimVariableData`: Simulator values pushed to the mechanic pipeline. Includes `IAS`, `Barber`, `OnGround`, `GroundType`, `GroundSpeed`, and `GearPosition` (0..1).
   - `MechanicProgress`: Progress reporting contract (status updates, joystick names, commands).
   - `SimCommand`: Commands for simulator operations (future expansion).
 
@@ -131,13 +135,23 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Implemented with a periodic effect (`PeriodicForce`) on X/Y axes.
   - Magnitude/period tuned based on stall vs overspeed; parameters updated in-place with `SetParameters`.
 
-- Gear Vibration (new)
+- Gear Vibration
   - Enabled when `profile.GearVibration == true` and `GearPosition >= 0.5` (gear down).
   - Disabled automatically when gear is up or the aircraft is on the ground (`OnGround >= 0.5`).
   - Implemented using two `PeriodicForce` effects (sine waves) on X/Y axes:
-    - Wave 1: lower frequency (~150 ms period), magnitude proportional to airspeed, up to 400.
-    - Wave 2: higher frequency (~22 ms period), phase-shifted, magnitude proportional to airspeed, up to 200.
+    - Wave 1: lower frequency (~150 ms period), magnitude proportional to airspeed.
+    - Wave 2: higher frequency (~22 ms period), phase-shifted, magnitude proportional to airspeed.
   - Magnitude scaling uses `IAS` normalized by `Barber` pole speed when available, otherwise a 250 KIAS reference. Effects are updated in-place when speed changes.
+
+- Ground Vibration (new)
+  - Enabled when `profile.GroundVibration == true` and `OnGround >= 0.5`.
+  - Disabled automatically when airborne.
+  - Implemented using two `PeriodicForce` layers plus optional `ConstantForce` pulses depending on surface:
+    - Asphalt: minimal high-frequency vibrations (two small sine waves). Magnitude is small and proportional to ground speed; zero when stationary.
+    - Grass: moderate low-frequency vibrations (two sine waves). Frequency increases with ground speed; zero when stationary.
+    - Concrete: light background vibration (sine) and small jolts every 20 meters traveled. Distance is accumulated from `GroundSpeed` (m/s). Jolts rendered via short `ConstantForce` pulses, amplitude scaled with speed.
+  - Axes selected via actuators if available, else X/Y fallback (Usage 48/49).
+  - Effects created lazily and updated in-place; fully cleared when disabled or device changes.
 
 - Trim
   - API: `IEffectsService.NudgeTrim(int pitchDelta, int rollDelta)`.
@@ -218,8 +232,14 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - "Save New Profile" targets the active simulator model when available; otherwise uses the selected profile name.
 - Landing gear vibration implemented:
   - UI toggle `Gear Vibrations` bound to `AirplaneProfile.GearVibration` and persisted per aircraft.
-  - Two sine waves combined; magnitudes scale with airspeed up to 1500 and 500 respectively.
+  - Two sine waves combined; magnitudes scale with airspeed.
   - Active only when gear is down and aircraft is airborne; stops when gear raised or on ground.
+- Ground vibration implemented:
+  - UI toggle `Ground Vibrations` bound to `AirplaneProfile.GroundVibration` and persisted per aircraft.
+  - Active only while on ground; stops automatically when airborne.
+  - Asphalt: minimal high-frequency vibrations using two small sine waves; magnitude scales with ground speed and is 0 when stationary.
+  - Grass: moderate low-frequency vibrations using two sine waves; frequency increases with ground speed; 0 when stationary.
+  - Concrete: light background sine vibration plus small jolts every 20 meters traveled; distance computed from `GroundSpeed` accumulation; jolts rendered via short `ConstantForce` pulses scaled with speed.
 
 ## Current Limitations / TODOs
 
@@ -247,5 +267,3 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 - Expose trim parameters in profiles:
   - `TrimStep` and `MaxTrimOffset` adjustments via UI.
   - Add "Reset Trim" button to re-center offsets.
-- Enhance axis mapping and normalization across devices.
-- Improve progress reporting granularity (errors, device capability summaries).

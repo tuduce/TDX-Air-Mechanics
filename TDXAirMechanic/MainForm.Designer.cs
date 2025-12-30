@@ -33,6 +33,7 @@
             materialTabControl1 = new MaterialSkin.Controls.MaterialTabControl();
             tabPageDashboard = new TabPage();
             materialCard2 = new MaterialSkin.Controls.MaterialCard();
+            FlightStatusLabel = new MaterialSkin.Controls.MaterialLabel();
             buttonConnectSimulator = new MaterialSkin.Controls.MaterialFloatingActionButton();
             imageListIcons = new ImageList(components);
             materialCard1 = new MaterialSkin.Controls.MaterialCard();
@@ -60,7 +61,7 @@
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
             comboBoxJoysticks = new MaterialSkin.Controls.MaterialComboBox();
             tabPageSettings = new TabPage();
-            FlightStatusLabel = new MaterialSkin.Controls.MaterialLabel();
+            GroundVibrationSwitch = new MaterialSkin.Controls.MaterialSwitch();
             materialTabControl1.SuspendLayout();
             tabPageDashboard.SuspendLayout();
             materialCard2.SuspendLayout();
@@ -113,6 +114,18 @@
             materialCard2.Padding = new Padding(14);
             materialCard2.Size = new Size(310, 76);
             materialCard2.TabIndex = 2;
+            // 
+            // FlightStatusLabel
+            // 
+            FlightStatusLabel.AutoSize = true;
+            FlightStatusLabel.Depth = 0;
+            FlightStatusLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            FlightStatusLabel.Location = new Point(17, 14);
+            FlightStatusLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            FlightStatusLabel.Name = "FlightStatusLabel";
+            FlightStatusLabel.Size = new Size(89, 19);
+            FlightStatusLabel.TabIndex = 3;
+            FlightStatusLabel.Text = "Flight status";
             // 
             // buttonConnectSimulator
             // 
@@ -183,6 +196,7 @@
             // 
             tabPageEffects.AutoScroll = true;
             tabPageEffects.BackColor = Color.WhiteSmoke;
+            tabPageEffects.Controls.Add(GroundVibrationSwitch);
             tabPageEffects.Controls.Add(GearVibratesSwitch);
             tabPageEffects.Controls.Add(JoyBtnExplainLabel);
             tabPageEffects.Controls.Add(RollRightTextBox);
@@ -536,17 +550,20 @@
             tabPageSettings.Text = "Settings";
             tabPageSettings.UseVisualStyleBackColor = true;
             // 
-            // FlightStatusLabel
+            // GroundVibrationSwitch
             // 
-            FlightStatusLabel.AutoSize = true;
-            FlightStatusLabel.Depth = 0;
-            FlightStatusLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            FlightStatusLabel.Location = new Point(17, 14);
-            FlightStatusLabel.MouseState = MaterialSkin.MouseState.HOVER;
-            FlightStatusLabel.Name = "FlightStatusLabel";
-            FlightStatusLabel.Size = new Size(89, 19);
-            FlightStatusLabel.TabIndex = 3;
-            FlightStatusLabel.Text = "Flight status";
+            GroundVibrationSwitch.AutoSize = true;
+            GroundVibrationSwitch.Depth = 0;
+            GroundVibrationSwitch.Location = new Point(13, 387);
+            GroundVibrationSwitch.Margin = new Padding(0);
+            GroundVibrationSwitch.MouseLocation = new Point(-1, -1);
+            GroundVibrationSwitch.MouseState = MaterialSkin.MouseState.HOVER;
+            GroundVibrationSwitch.Name = "GroundVibrationSwitch";
+            GroundVibrationSwitch.Ripple = true;
+            GroundVibrationSwitch.Size = new Size(184, 37);
+            GroundVibrationSwitch.TabIndex = 14;
+            GroundVibrationSwitch.Text = "Ground vibrations";
+            GroundVibrationSwitch.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
@@ -607,5 +624,6 @@
         private MaterialSkin.Controls.MaterialLabel JoyBtnExplainLabel;
         private MaterialSkin.Controls.MaterialSwitch GearVibratesSwitch;
         private MaterialSkin.Controls.MaterialLabel FlightStatusLabel;
+        private MaterialSkin.Controls.MaterialSwitch GroundVibrationSwitch;
     }
 }

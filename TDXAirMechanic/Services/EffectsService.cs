@@ -16,6 +16,9 @@ namespace TDXAirMechanic.Services
         private Effect? _stickShakerEffect; // single periodic effect applied on X/Y
         private Effect? _gearVibrationEffect1; // first sine wave for gear down vibration
         private Effect? _gearVibrationEffect2; // second sine wave for gear down vibration
+        private Effect? _groundEffect1;       // ground roll base vibration
+        private Effect? _groundEffect2;       // secondary ground roll vibration or jolt carrier
+        private Effect? _groundJoltEffect;    // short pulse effect for concrete
 
         // Cache axes used for spring updates and last applied stiffness to avoid churn
         private int[]? _springAxes;
@@ -25,6 +28,10 @@ namespace TDXAirMechanic.Services
         // Trim offsets per axis (aligned with _springAxisUsages order)
         private int _trimOffsetX = 0; // Usage 48
         private int _trimOffsetY = 0; // Usage 49
+
+        // Ground roll state
+        private double _groundDistanceAccumM = 0; // meters since last jolt on concrete
+        private long _lastGroundTick = 0;         // ms
 
         private Joystick? GetJoystickSafe()
         {
@@ -86,6 +93,10 @@ namespace TDXAirMechanic.Services
             // Gear vibration should be stopped if disabled in profile
             if (_profile?.GearVibration != true)
                 RemoveGearVibrationEffects();
+
+            // Ground vibration should be stopped if disabled in profile
+            if (_profile?.GroundVibration != true)
+                RemoveGroundEffects();
         }
 
         public void Update(SimVariableData data)
@@ -117,11 +128,12 @@ namespace TDXAirMechanic.Services
                 }
             }
 
+            bool onGround = data.OnGround >= 0.5;
+
             // Gear vibration when gear is down, and aircraft not on ground
             if (_profile.GearVibration)
             {
                 bool gearDown = data.GearPosition >= 0.5; // threshold
-                bool onGround = data.OnGround >= 0.5;
                 if (gearDown && !onGround)
                 {
                     EnsureGearVibrationEffects(js, data);
@@ -131,12 +143,30 @@ namespace TDXAirMechanic.Services
                     RemoveGearVibrationEffects();
                 }
             }
+
+            // Ground roll vibrations when on ground
+            if (_profile.GroundVibration)
+            {
+                if (onGround)
+                {
+                    EnsureOrUpdateGroundEffects(js, data);
+                }
+                else
+                {
+                    RemoveGroundEffects();
+                }
+            }
+            else
+            {
+                RemoveGroundEffects();
+            }
         }
 
         public void ResetAll()
         {
             RemoveStickShakerEffect();
             RemoveGearVibrationEffects();
+            RemoveGroundEffects();
             RemoveSpringEffect();
             _trimOffsetX = 0;
             _trimOffsetY = 0;
@@ -569,7 +599,7 @@ namespace TDXAirMechanic.Services
                 double factor = refSpeed > 0 ? Math.Clamp(ias / refSpeed, 0.0, 1.0) : 0.0;
 
                 // Map to magnitudes (max 1500 and 500 respectively)
-                int mag1 = (int)Math.Round(1500 * factor);
+                int mag1 = (int)Math.Round(500 * factor);
                 int mag2 = (int)Math.Round(300 * factor);
 
                 // Wave 1: lower frequency, magnitude up to 1500
@@ -590,7 +620,7 @@ namespace TDXAirMechanic.Services
                         Magnitude = mag1,
                         Offset = 0,
                         Phase = 0,
-                        Period = 1000000 // us
+                        Period = 250000 // us
                     };
                     _gearVibrationEffect1 = new Effect(js, periodicInfo.Guid, ep1);
                     _gearVibrationEffect1.Start(1);
@@ -669,6 +699,217 @@ namespace TDXAirMechanic.Services
             }
         }
 
+        private void EnsureOrUpdateGroundEffects(Joystick js, SimVariableData data)
+        {
+            try
+            {
+                // Discover axes once per call to be robust to device changes
+                var axisObjects = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
+                    .OrderBy(a => a.Usage)
+                    .ToList();
+                if (axisObjects.Count == 0)
+                {
+                    axisObjects = js.GetObjects(DeviceObjectTypeFlags.Axis)
+                        .Where(a => a.Usage == 48 || a.Usage == 49)
+                        .OrderBy(a => a.Usage)
+                        .ToList();
+                }
+                if (axisObjects.Count == 0)
+                    return;
+
+                int[] axes = axisObjects.Select(a => a.Offset).ToArray();
+                int[] dirs = new int[axes.Length];
+
+                // Effect capabilities
+                var periodicInfo = js.GetEffects(EffectType.Periodic).FirstOrDefault();
+                var constantInfo = js.GetEffects(EffectType.ConstantForce).FirstOrDefault();
+                if (periodicInfo == null)
+                {
+                    // No periodic support -> cannot render ground vibrations meaningfully
+                    return;
+                }
+
+                // Timing and speed
+                double gs = Math.Max(0, data.GroundSpeed); // m/s
+                long now = Environment.TickCount64;
+                if (_lastGroundTick == 0) _lastGroundTick = now;
+                double dtSec = Math.Max(0.01, (now - _lastGroundTick) / 1000.0);
+                _lastGroundTick = now;
+                _groundDistanceAccumM += gs * dtSec;
+
+                // Surface mapping
+                int surface = (int)Math.Round(data.GroundType);
+                bool isConcrete = surface == 1;                   // CONCRETE
+                bool isGrass = surface == 2;                      // GRASS
+                bool isAsphalt = surface == 4 || surface == 18;   // ASPHALT or TARMAC
+
+                // General normalized speed [0..1] for scaling
+                double speedNorm = Math.Clamp(gs / 50.0, 0.0, 1.0); // 50 m/s ~ 97 kts
+
+                // Ensure/create base periodic ground effects (two layers)
+                if (_groundEffect1 == null)
+                {
+                    var ep1 = new EffectParameters
+                    {
+                        Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                        Duration = int.MaxValue,
+                        SamplePeriod = 0,
+                        Gain = 10000,
+                        TriggerButton = -1,
+                        TriggerRepeatInterval = 0
+                    };
+                    ep1.SetAxes(axes, dirs);
+                    ep1.Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 0, Period = 80000 };
+                    _groundEffect1 = new Effect(js, periodicInfo.Guid, ep1);
+                    _groundEffect1.Start(1);
+                }
+                if (_groundEffect2 == null)
+                {
+                    var ep2 = new EffectParameters
+                    {
+                        Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                        Duration = int.MaxValue,
+                        SamplePeriod = 0,
+                        Gain = 10000,
+                        TriggerButton = -1,
+                        TriggerRepeatInterval = 0
+                    };
+                    ep2.SetAxes(axes, dirs);
+                    ep2.Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 18000, Period = 60000 };
+                    _groundEffect2 = new Effect(js, periodicInfo.Guid, ep2);
+                    _groundEffect2.Start(1);
+                }
+
+                // Prepare updates per surface
+                if (isAsphalt)
+                {
+                    // Minimal high-frequency vibrations, only when rolling
+                    if (gs < 0.5)
+                    {
+                        var off1 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 0, Period = 14000 } };
+                        off1.SetAxes(axes, dirs);
+                        _groundEffect1?.SetParameters(off1, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                        var off2 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 9000, Period = 22000 } };
+                        off2.SetAxes(axes, dirs);
+                        _groundEffect2?.SetParameters(off2, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                    }
+                    else
+                    {
+                        int mag1 = (int)Math.Round(240 * speedNorm);
+                        int mag2 = (int)Math.Round(180 * speedNorm);
+                        int per1 = 14000; // 14 ms
+                        int per2 = 22000; // 22 ms
+
+                        var upd1 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = mag1, Offset = 0, Phase = 0, Period = per1 } };
+                        upd1.SetAxes(axes, dirs);
+                        _groundEffect1?.SetParameters(upd1, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+
+                        var upd2 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = mag2, Offset = 0, Phase = 9000, Period = per2 } };
+                        upd2.SetAxes(axes, dirs);
+                        _groundEffect2?.SetParameters(upd2, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                    }
+                }
+                else if (isGrass)
+                {
+                    // Low-frequency, moderate amplitude; frequency increases with speed; 0 when stopped
+                    if (gs < 0.5)
+                    {
+                        var off1 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 0, Period = 120000 } };
+                        off1.SetAxes(axes, dirs);
+                        _groundEffect1?.SetParameters(off1, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                        var off2 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 18000, Period = 90000 } };
+                        off2.SetAxes(axes, dirs);
+                        _groundEffect2?.SetParameters(off2, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                    }
+                    else
+                    {
+                        int per1 = (int)Math.Round(120000 - 60000 * speedNorm); // 120ms -> 60ms
+                        int per2 = (int)Math.Round(90000 - 45000 * speedNorm);  // 90ms -> 45ms
+                        int mag1 = (int)Math.Round(1400 * speedNorm);          // 0..1400
+                        int mag2 = (int)Math.Round(1000 * speedNorm);          // 0..1000
+
+                        var upd1 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = mag1, Offset = 0, Phase = 0, Period = per1 } };
+                        upd1.SetAxes(axes, dirs);
+                        _groundEffect1?.SetParameters(upd1, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+
+                        var upd2 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = mag2, Offset = 0, Phase = 18000, Period = per2 } };
+                        upd2.SetAxes(axes, dirs);
+                        _groundEffect2?.SetParameters(upd2, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                    }
+                }
+                else if (isConcrete)
+                {
+                    // Background light vibration + concrete jolts every 20m; 0 background when stopped
+                    int bgMag = (int)Math.Round(140 * speedNorm);
+                    int bgPer = 30000; // 30 ms
+
+                    var updBg = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = bgMag, Offset = 0, Phase = 0, Period = bgPer } };
+                    updBg.SetAxes(axes, dirs);
+                    _groundEffect1?.SetParameters(updBg, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+
+                    // Keep second periodic very low to avoid masking jolts
+                    var upd2 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 18000, Period = 28000 } };
+                    upd2.SetAxes(axes, dirs);
+                    _groundEffect2?.SetParameters(upd2, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+
+                    // Fire a short jolt if enough distance accumulated
+                    if (constantInfo != null && _groundDistanceAccumM >= 20.0)
+                    {
+                        // Consume one stride (approximate single pulse per update)
+                        _groundDistanceAccumM -= 20.0;
+
+                        if (_groundJoltEffect == null)
+                        {
+                            var epJ = new EffectParameters
+                            {
+                                Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                                Duration = 50000, // 50 ms
+                                SamplePeriod = 0,
+                                Gain = 10000,
+                                TriggerButton = -1,
+                                TriggerRepeatInterval = 0
+                            };
+                            epJ.SetAxes(axes, dirs);
+                            epJ.Parameters = new ConstantForce { Magnitude = 3000 };
+                            _groundJoltEffect = new Effect(js, constantInfo.Guid, epJ);
+                        }
+
+                        // Update magnitude scaled with speed and retrigger
+                        int pulseMag = (int)Math.Round(2000 + 4000 * speedNorm); // 2k..6k small jolts
+                        var updJ = new EffectParameters
+                        {
+                            Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                            Duration = 50000,
+                            SamplePeriod = 0,
+                            Gain = 10000,
+                            TriggerButton = -1,
+                            TriggerRepeatInterval = 0,
+                            Parameters = new ConstantForce { Magnitude = pulseMag }
+                        };
+                        updJ.SetAxes(axes, dirs);
+                        _groundJoltEffect.SetParameters(updJ, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                        _groundJoltEffect.Start(1);
+                    }
+                }
+                else
+                {
+                    // Unknown/unsupported surface: keep minimal vibrations off
+                    var upd1 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 0, Period = 80000 } };
+                    upd1.SetAxes(axes, dirs);
+                    _groundEffect1?.SetParameters(upd1, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+
+                    var upd2 = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0, Parameters = new PeriodicForce { Magnitude = 0, Offset = 0, Phase = 18000, Period = 60000 } };
+                    upd2.SetAxes(axes, dirs);
+                    _groundEffect2?.SetParameters(upd2, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex + "[Effects] Failed to ensure/update ground effects");
+                RemoveGroundEffects();
+            }
+        }
+
         private void RemoveGearVibrationEffects()
         {
             try { _gearVibrationEffect1?.Stop(); } catch { }
@@ -678,6 +919,24 @@ namespace TDXAirMechanic.Services
             try { _gearVibrationEffect2?.Stop(); } catch { }
             try { _gearVibrationEffect2?.Dispose(); } catch { }
             _gearVibrationEffect2 = null;
+        }
+
+        private void RemoveGroundEffects()
+        {
+            try { _groundEffect1?.Stop(); } catch { }
+            try { _groundEffect1?.Dispose(); } catch { }
+            _groundEffect1 = null;
+
+            try { _groundEffect2?.Stop(); } catch { }
+            try { _groundEffect2?.Dispose(); } catch { }
+            _groundEffect2 = null;
+
+            try { _groundJoltEffect?.Stop(); } catch { }
+            try { _groundJoltEffect?.Dispose(); } catch { }
+            _groundJoltEffect = null;
+
+            _groundDistanceAccumM = 0;
+            _lastGroundTick = 0;
         }
 
         public void Dispose()

@@ -101,7 +101,7 @@ namespace TDXAirMechanic.Services
             {
                 _effects.ApplyProfile(profile);
             }
-            Debug.WriteLine($"[Mechanic] Active profile set: Model={profile.Model}, Centered={profile.CenteredSpring}, Dynamic={profile.DynamicSpring}, Shaker={profile.StickShaker}, GearVibration={profile.GearVibration}");
+            Debug.WriteLine($"[Mechanic] Active profile set: Model={profile.Model}, Centered={profile.CenteredSpring}, Dynamic={profile.DynamicSpring}, Shaker={profile.StickShaker}, GearVibration={profile.GearVibration}, GroundVibration={profile.GroundVibration}");
         }
 
         // Called by UI when the selected joystick changes

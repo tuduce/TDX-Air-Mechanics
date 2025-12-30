@@ -15,6 +15,7 @@ namespace TDXAirMechanic.Model
         public bool DynamicSpring { get; set; }
         public bool StickShaker { get; set; }
         public bool GearVibration { get; set; } // Vibrate stick when landing gear is lowered
+        public bool GroundVibration { get; set; } // Ground roll vibrations when on ground
 
         // Trim enable state (UI `TrimSwitch`); trim acts only if CenteredSpring is also enabled.
         public bool TrimEnabled { get; set; } = true;

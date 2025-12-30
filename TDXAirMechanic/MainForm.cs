@@ -159,6 +159,7 @@ namespace TDXAirMechanic
                 switchDynamicSpring.Checked = profile.DynamicSpring && SwitchCenterSpring.Checked;
                 switchStickShaker.Checked = profile.StickShaker;
                 GearVibratesSwitch.Checked = profile.GearVibration;
+                GroundVibrationSwitch.Checked = profile.GroundVibration;
 
                 // Trim
                 TrimSwitch.Checked = profile.TrimEnabled;
@@ -209,6 +210,7 @@ namespace TDXAirMechanic
             _currentProfile.DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked; // only valid when centered
             _currentProfile.StickShaker = switchStickShaker.Checked;
             _currentProfile.GearVibration = GearVibratesSwitch.Checked;
+            _currentProfile.GroundVibration = GroundVibrationSwitch.Checked;
 
             // Trim
             _currentProfile.TrimEnabled = TrimSwitch.Checked;
@@ -266,6 +268,7 @@ namespace TDXAirMechanic
             switchDynamicSpring.CheckedChanged += switchDynamicSpring_CheckedChanged;
             switchStickShaker.CheckedChanged += switchStickShaker_CheckedChanged;
             GearVibratesSwitch.CheckedChanged += GearVibratesSwitch_CheckedChanged;
+            GroundVibrationSwitch.CheckedChanged += GroundVibrationSwitch_CheckedChanged;
 
             TrimSwitch.CheckedChanged += TrimSwitch_CheckedChanged;
             PitchUpTextBox.TextChanged += TrimTextBox_TextChanged;
@@ -357,6 +360,11 @@ namespace TDXAirMechanic
             UpdateCurrentProfileFromUi();
         }
 
+        private void GroundVibrationSwitch_CheckedChanged(object? sender, EventArgs e)
+        {
+            UpdateCurrentProfileFromUi();
+        }
+
         private void comboBoxJoysticks_SelectedIndexChanged(object? sender, EventArgs e)
         {
             if (!_uiReadyForAcquire) return;
@@ -397,6 +405,7 @@ namespace TDXAirMechanic
                 DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked,
                 StickShaker = switchStickShaker.Checked,
                 GearVibration = GearVibratesSwitch.Checked,
+                GroundVibration = GroundVibrationSwitch.Checked,
                 TrimEnabled = TrimSwitch.Checked,
                 PitchTrimUpButton = ParseButtonIndex(PitchUpTextBox),
                 PitchTrimDownButton = ParseButtonIndex(PitchDownTextBox),
