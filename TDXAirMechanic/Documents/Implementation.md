@@ -33,7 +33,7 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 - Services
   - `MechanicService` (device management, sim data pipeline; delegates effects to `IEffectsService`).
-  - `EffectsService` (implements `IEffectsService`: manages FFB effects lifecycle for the attached joystick).
+  - `EffectsService` (implements `IEffectsService`: orchestrates lifecycle of effect classes for the attached joystick).
   - `SimConnectService` (simulator variables producer, enqueues to `MechanicService`).
   - `ProfileManager` (implements `IProfileManager`: JSON persistence of airplane profiles, filename sanitization, listing profiles by display `Model`).
 
@@ -99,73 +99,35 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Update effects in response to `SimVariableData`.
   - Reset and clean up effects when device changes or disposing.
 
-- Centered Spring
-  - Created when profile has `CenteredSpring == true` and a joystick is attached.
-  - Axis discovery:
-    - Prefers `ForceFeedbackActuator` objects ordered by `Usage`.
-    - Fallback to `Axis` objects filtered to Usage 48/49 (X/Y).
-  - Effect parameters:
-    - `EffectFlags.ObjectOffsets | EffectFlags.Cartesian`
-    - Duration: infinite (`int.MaxValue`)
-    - Gain: 10000
-    - Trigger: none
-  - Conditions per axis:
-    - Center offset 0 (updated by trim; see below)
-    - Positive/NegativeCoefficient: 10000 (updated by dynamic spring)
-    - DeadBand: 500 (base; may be overridden in dynamic updates)
-    - Positive/NegativeSaturation: 10000
-  - Starts with loop count 1 (infinite). Properly stopped/disposed on removal.
+### Effects Class Refactor (Implemented)
 
-- Dynamic Spring
-  - Enabled only when both `CenteredSpring` and `DynamicSpring` are true in the active profile.
-  - Stiffness is updated continuously based on airspeed from `SimVariableData`:
-    - Normalized factor = clamp(`IAS` / `Barber`, 0..1). If `Barber <= 0`, fallback uses 250 KIAS as the max reference.
-    - Coefficients (`PositiveCoefficient`/`NegativeCoefficient`) are mapped linearly from 1000 (soft at low speed) to 10000 (firm at barber-pole speed).
-    - Updates are throttled: coefficients are re-applied only when the change is >= 100 to reduce DirectInput churn.
-  - Implementation details:
-    - Reuses the existing spring effect via `SetParameters` to update the `ConditionSet` in place; axes are preserved.
-    - Axis offsets used by the spring are cached on creation and reused for updates; caches are cleared on device or effect removal.
-    - Trim offsets (see below) are preserved on every dynamic update.
+Effects were refactored into separate classes under `Services/Effects`, each owning its lifecycle and parameters. `EffectsService` now orchestrates these classes.
 
-- Stick Shaker
-  - Enabled when `profile.StickShaker == true`.
-  - Trigger conditions:
-    - Stall: `StallWarning > 0.5`.
-    - Overspeed: near barber pole (`IAS >= Barber * 0.98`).
-  - Implemented with a periodic effect (`PeriodicForce`) on X/Y axes.
-  - Magnitude/period tuned based on stall vs overspeed; parameters updated in-place with `SetParameters`.
+- `EffectsService`
+  - Holds instances of `SpringEffect`, `StickShakerEffect`, `GearVibrationEffect`, `GroundVibrationEffect`.
+  - Delegates `AttachDevice`, `DetachDevice`, `ApplyProfile`, `Update`, and `ResetAll` to the respective effect classes.
+  - Delegates `NudgeTrim` to `SpringEffect`.
 
-- Gear Vibration
-  - Enabled when `profile.GearVibration == true` and `GearPosition >= 0.5` (gear down).
-  - Disabled automatically when gear is up or the aircraft is on the ground (`OnGround >= 0.5`).
-  - Implemented using two `PeriodicForce` effects (sine waves) on X/Y axes:
-    - Wave 1: lower frequency (~150 ms period), magnitude proportional to airspeed.
-    - Wave 2: higher frequency (~22 ms period), phase-shifted, magnitude proportional to airspeed.
-  - Magnitude scaling uses `IAS` normalized by `Barber` pole speed when available, otherwise a 250 KIAS reference. Effects are updated in-place when speed changes.
+- `SpringEffect`
+  - Implements centered spring creation and dynamic stiffness updates.
+  - Maintains trim offsets per axis and applies via `Condition.Offset`.
+  - Axis discovery prefers `ForceFeedbackActuator`, falls back to X/Y usages 48/49.
+  - Preserves offsets across dynamic updates and throttles stiffness changes (<100 diff).
 
-- Ground Vibration (new)
-  - Enabled when `profile.GroundVibration == true` and `OnGround >= 0.5`.
-  - Disabled automatically when airborne.
-  - Implemented using two `PeriodicForce` layers plus optional `ConstantForce` pulses depending on surface:
-    - Asphalt: minimal high-frequency vibrations (two small sine waves). Magnitude is small and proportional to ground speed; zero when stationary.
-    - Grass: moderate low-frequency vibrations (two sine waves). Frequency increases with ground speed; zero when stationary.
-    - Concrete: light background vibration (sine) and small jolts every 20 meters traveled. Distance is accumulated from `GroundSpeed` (m/s). Jolts rendered via short `ConstantForce` pulses, amplitude scaled with speed.
-  - Axes selected via actuators if available, else X/Y fallback (Usage 48/49).
-  - Effects created lazily and updated in-place; fully cleared when disabled or device changes.
+- `StickShakerEffect`
+  - Periodic sine effect on X/Y axes for stall/overspeed.
+  - Lazily created, updated in-place based on conditions.
 
-- Trim
-  - API: `IEffectsService.NudgeTrim(int pitchDelta, int rollDelta)`.
-  - Logic:
-    - Maintains per-axis spring center offsets (`_trimOffsetX`/`_trimOffsetY`) and clamps to `MaxTrimOffset`.
-    - Applies offsets to the spring effect via the `Condition.Offset` for X/Y axes (usages 48/49).
-    - Only active when a device is attached and `CenteredSpring` is enabled.
-  - Integration:
-    - `MechanicService` calls `NudgeTrim` on mapped button presses (with auto-repeat).
-    - Works alongside dynamic spring updates; offsets are preserved on stiffness changes.
+- `GearVibrationEffect`
+  - Two periodic sine effects when gear is down and aircraft is airborne.
+  - Magnitude scales with `IAS` normalized by `Barber` (or 250 KIAS fallback).
 
-- Threading and Disposal Safety
-  - Uses safe joystick access (`NativePointer` guard) to avoid calling DirectInput on disposed devices during shutdown.
-  - Captures a local joystick reference for effect creation/update to avoid races.
+- `GroundVibrationEffect`
+  - Two periodic layers plus optional `ConstantForce` pulses on concrete.
+  - Active only while `OnGround >= 0.5`.
+  - Surface mapping: asphalt (minimal high-frequency), grass (low-frequency increasing with speed), concrete (background + jolts every ~20 m).
+
+All classes implement: `AttachDevice`, `DetachDevice`, `ApplyProfile`, `Update`, `Reset`, `Start`, `Stop`, `Dispose`.
 
 ## Flight State Handling
 
@@ -222,6 +184,9 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Asphalt: minimal high-frequency vibrations using two small sine waves; magnitude scales with ground speed and is 0 when stationary.
   - Grass: moderate low-frequency vibrations using two sine waves; frequency increases with ground speed; 0 when stationary.
   - Concrete: light background sine vibration plus small jolts every 20 meters traveled; distance computed from `GroundSpeed` accumulation; jolts rendered via short `ConstantForce` pulses scaled with speed.
+- Effects refactor implemented:
+  - Introduced `Services/Effects` with `SpringEffect`, `StickShakerEffect`, `GearVibrationEffect`, `GroundVibrationEffect`.
+  - `EffectsService` now orchestrates these classes and delegates `NudgeTrim` to `SpringEffect`.
 
 ## Current Limitations / TODOs
 

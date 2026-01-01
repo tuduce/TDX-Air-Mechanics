@@ -6,7 +6,12 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>air mechanic icon square.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="air mechanic icon square.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MaterialSkin.2" Version="2.3.1" />
