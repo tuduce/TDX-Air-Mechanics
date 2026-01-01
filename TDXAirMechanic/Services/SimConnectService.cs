@@ -39,11 +39,10 @@ namespace TDXAirMechanic.Services
         private enum DEFINITIONS { BasicInfo }
         private enum DATA_REQUESTS { RequestBasicInfo }
 
-        // System event IDs as enum to match API signature
-        private enum SYSTEM_EVENT_ID
+        // System state request IDs
+        private enum SYSTEM_STATE_REQUESTS
         {
-            SimStart = 1,
-            SimStop = 2
+            Sim = 100
         }
 
         // This is the structure that will be sent to SimConnect
@@ -63,6 +62,10 @@ namespace TDXAirMechanic.Services
         }
 
         private readonly MechanicService _mechanicService = mechanicService;
+
+        // Polling cadence
+        private DateTime _lastSimStatePollUtc = DateTime.MinValue;
+        private readonly TimeSpan _simStatePollInterval = TimeSpan.FromSeconds(1);
 
         public void Start(IProgress<AirplaneProfile> progress, IntPtr windowHandle, IProgress<MechanicProgress>? flightStatusProgress = null)
         {
@@ -121,11 +124,11 @@ namespace TDXAirMechanic.Services
                 _simConnect.OnRecvQuit += OnRecvQuit;
                 _simConnect.OnRecvException += OnRecvException;
                 _simConnect.OnRecvSimobjectData += OnRecvSimobjectData;
-                _simConnect.OnRecvEvent += OnRecvEvent;
+                _simConnect.OnRecvSystemState += OnRecvSystemState;
 
-                // Subscribe to sys events: Flight loaded/unloaded
-                _simConnect.SubscribeToSystemEvent(SYSTEM_EVENT_ID.SimStart, "SimStart");
-                _simConnect.SubscribeToSystemEvent(SYSTEM_EVENT_ID.SimStop, "SimStop");
+                // Initial poll of Sim state on connect
+                _simConnect.RequestSystemState(SYSTEM_STATE_REQUESTS.Sim, "Sim");
+                _lastSimStatePollUtc = DateTime.UtcNow;
 
                 // --- Main Loop ---
                 while (!token.IsCancellationRequested)
@@ -136,11 +139,17 @@ namespace TDXAirMechanic.Services
                         ProcessCommand(command);
                     }
 
+                    // Periodically poll Sim system state
+                    if (DateTime.UtcNow - _lastSimStatePollUtc >= _simStatePollInterval)
+                    {
+                        _simConnect?.RequestSystemState(SYSTEM_STATE_REQUESTS.Sim, "Sim");
+                        _lastSimStatePollUtc = DateTime.UtcNow;
+                    }
+
                     // Let SimConnect process its messages
                     _simConnect?.ReceiveMessage();
 
                     // Small delay to prevent a tight loop from consuming 100% CPU
-                    // TODO: integrate with the UI message pump if possible
                     Thread.Sleep(50);
                 }
             }
@@ -162,13 +171,10 @@ namespace TDXAirMechanic.Services
             switch (command.CommandType)
             {
                 case SimCommandType.SetAutopilotHeading:
-                    // Example: Transmit a client event to the sim
-                    // _simConnect.TransmitClientEvent(...);
                     Debug.WriteLine($"Command received: Set heading to {command.Value}");
                     break;
 
                 case SimCommandType.ToggleParkingBrake:
-                    // ...
                     break;
             }
         }
@@ -194,21 +200,19 @@ namespace TDXAirMechanic.Services
             _simConnect?.RequestDataOnSimObject(DATA_REQUESTS.RequestBasicInfo, DEFINITIONS.BasicInfo, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, 0, 0, 0, 0);
         }
 
-        private void OnRecvEvent(SimConnect sender, SIMCONNECT_RECV_EVENT evt)
+        private void OnRecvSystemState(SimConnect sender, SIMCONNECT_RECV_SYSTEM_STATE data)
         {
-            // SimStart/SimStop events can fire multiple times; maintain idempotent state
-            if (evt.uEventID == (uint)SYSTEM_EVENT_ID.SimStart)
+            if (data.dwRequestID == (uint)SYSTEM_STATE_REQUESTS.Sim)
             {
-                if (!_flightLoaded)
+                var simRunning = data.dwInteger != 0;
+
+                if (simRunning && !_flightLoaded)
                 {
                     _flightLoaded = true;
                     _mechanicService.SetFlightLoaded(true);
                     _flightStatusReporter?.Report(new MechanicProgress { Command = MechanicProgressCommand.SetFlightStatus, Status = "Flight Loaded - Effects Active" });
                 }
-            }
-            else if (evt.uEventID == (uint)SYSTEM_EVENT_ID.SimStop)
-            {
-                if (_flightLoaded)
+                else if (!simRunning && _flightLoaded)
                 {
                     _flightLoaded = false;
                     _mechanicService.SetFlightLoaded(false);
@@ -265,7 +269,6 @@ namespace TDXAirMechanic.Services
             if (_simConnect != null)
             {
                 // Send a disconnect message
-                // Create a data object to send to the UI
                 var uiData = new AirplaneProfile
                 {
                     Model = "Click paper plane for MSFS"
@@ -287,9 +290,7 @@ namespace TDXAirMechanic.Services
         // Public dispose method (the one consumers will call)
         public void Dispose()
         {
-            // Dispose of managed and unmanaged resources.
             Dispose(true);
-            // Suppress finalization to prevent the finalizer from running.
             GC.SuppressFinalize(this);
         }
 
@@ -311,7 +312,6 @@ namespace TDXAirMechanic.Services
             // Mark that this object has been disposed.
             _disposed = true;
         }
-
 
         // A helper class to create a message-only window for SimConnect
         private class MessageWindow : NativeWindow, IDisposable

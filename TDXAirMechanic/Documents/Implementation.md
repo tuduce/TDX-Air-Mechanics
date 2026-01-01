@@ -28,7 +28,7 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
     - Toggle `Ground Vibrations` in the Effects tab to enable/disable ground roll vibrations.
     - Persisted per aircraft in the profile JSON via `GroundVibration`.
     - Active only while `OnGround >= 0.5`; disabled automatically when airborne.
-  - Flight state UX (SimStart/SimStop):
+  - Flight state UX:
     - `FlightStatusLabel` displays current state ("No Flight Loaded" or "Flight Loaded - Effects Active").
 
 - Services
@@ -167,16 +167,14 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Uses safe joystick access (`NativePointer` guard) to avoid calling DirectInput on disposed devices during shutdown.
   - Captures a local joystick reference for effect creation/update to avoid races.
 
-## SimStart/SimStop Flight State Handling
+## Flight State Handling
 
 - Overview
-  - Effects are active only when a flight is loaded (SimStart). When no flight is loaded (SimStop or disconnect), all effects are disabled and cleared.
+  - Effects are active only when a flight is loaded. When no flight is loaded (menu or disconnect), all effects are disabled and cleared.
 
 - Service Integration
-  - `SimConnectService` subscribes to system events using `SubscribeToSystemEvent(SYSTEM_EVENT_ID.SimStart, "SimStart")` and `SubscribeToSystemEvent(SYSTEM_EVENT_ID.SimStop, "SimStop")`.
-  - On `OnRecvEvent`:
-    - For `SimStart`: sets an internal `_flightLoaded` flag, calls `MechanicService.SetFlightLoaded(true)`, and reports `MechanicProgressCommand.SetFlightStatus` = "Flight Loaded - Effects Active" to the UI.
-    - For `SimStop`: clears `_flightLoaded`, calls `MechanicService.SetFlightLoaded(false)`, and reports `SetFlightStatus` = "No Flight Loaded".
+  - `SimConnectService` polls SimConnect system state via `RequestSystemState("Sim")` on a 1-second interval and on initial connect.
+  - `OnRecvSystemState` evaluates `dwInteger` to determine running/flight state and calls `MechanicService.SetFlightLoaded(bool)` accordingly.
   - On `Disconnect()`: resets flight state to not loaded and reports "No Flight Loaded".
 
 - Mechanic Gating
@@ -196,8 +194,7 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
   - Initializes `FlightStatusLabel` to "No Flight Loaded" on form load.
 
 - Idempotency
-  - Multiple `SimStart` events are handled safely: state is set to loaded only once and effects re-application occurs without duplication.
-  - Multiple `SimStop` events are handled safely: state remains not loaded and effects are already cleared.
+  - State changes are handled safely and do not duplicate effect creation or clearing.
 
 ## Threading and Safety
 
@@ -215,25 +212,10 @@ TDX Air Mechanic provides a force feedback (FFB) mechanic layer wired to flight 
 
 ## Recent Changes
 
-- SimStart/SimStop flight state implemented:
-  - Subscribed to system events in `SimConnectService` and bridged state to `MechanicService` via `SetFlightLoaded(bool)`.
-  - Effects gated in `MechanicService`; cleared on SimStop/disconnect, applied only after SimStart.
-  - UI `FlightStatusLabel` shows current flight state via `MechanicProgressCommand.SetFlightStatus`.
-- Trim feature implemented end-to-end:
-  - UI: visibility toggling with `CenteredSpring`, joystick button capture into textboxes, persisted to profile JSON.
-  - Model: added `TrimEnabled`, four trim button indices, `TrimStep`, `MaxTrimOffset`.
-  - Mechanic: polls joystick at ~50 Hz, rising-edge detection with 100 ms auto-repeat for held buttons, `BeginButtonCapture/CancelButtonCapture` for UI mapping.
-  - Effects: `NudgeTrim` applies spring center offsets per axis and preserves them across dynamic updates.
-- Dynamic spring tuning updated:
-  - Min stiffness set to 1000 (from 2000 in earlier docs), max 10000, with 100-unit update threshold.
-- Profile selection and saving behavior:
-  - Auto-select the aircraft model profile on simulator connect.
-  - Edits save to the currently selected profile file (no implicit model overrides).
-  - "Save New Profile" targets the active simulator model when available; otherwise uses the selected profile name.
-- Landing gear vibration implemented:
-  - UI toggle `Gear Vibrations` bound to `AirplaneProfile.GearVibration` and persisted per aircraft.
-  - Two sine waves combined; magnitudes scale with airspeed.
-  - Active only when gear is down and aircraft is airborne; stops when gear raised or on ground.
+- Flight state detection updated:
+  - Removed `SimStart/SimStop` subscriptions.
+  - Added polling of SimConnect system state (`RequestSystemState("Sim")`) and gating logic in `OnRecvSystemState`.
+  - Keeps idempotent status updates via `MechanicProgressCommand.SetFlightStatus`.
 - Ground vibration implemented:
   - UI toggle `Ground Vibrations` bound to `AirplaneProfile.GroundVibration` and persisted per aircraft.
   - Active only while on ground; stops automatically when airborne.
