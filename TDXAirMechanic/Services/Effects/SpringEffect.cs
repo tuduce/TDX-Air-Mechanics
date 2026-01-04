@@ -22,7 +22,15 @@ namespace TDXAirMechanic.Services.Effects
         {
             var js = _joystick;
             if (js == null) return null;
-            try { if (js.NativePointer == IntPtr.Zero) return null; return js; } catch { return null; }
+            try
+            {
+                if (js.NativePointer == IntPtr.Zero) return null;
+                return js;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public void AttachDevice(Joystick joystick)
@@ -52,8 +60,10 @@ namespace TDXAirMechanic.Services.Effects
         {
             var js = GetJoystickSafe();
             if (js == null || _profile == null) return;
+
             if (_profile.CenteredSpring)
                 EnsureSpringEffect();
+
             if (_profile.CenteredSpring && _profile.DynamicSpring)
                 UpdateDynamicSpring(data);
         }
@@ -84,8 +94,10 @@ namespace TDXAirMechanic.Services.Effects
             try
             {
                 int max = Math.Max(0, _profile?.MaxTrimOffset ?? 4000);
-                if (rollDelta != 0) _trimOffsetX = Math.Clamp(_trimOffsetX + rollDelta, -max, max);
-                if (pitchDelta != 0) _trimOffsetY = Math.Clamp(_trimOffsetY + pitchDelta, -max, max);
+                if (rollDelta != 0)
+                    _trimOffsetX = Math.Clamp(_trimOffsetX + rollDelta, -max, max);
+                if (pitchDelta != 0)
+                    _trimOffsetY = Math.Clamp(_trimOffsetY + pitchDelta, -max, max);
                 ApplySpringOffsets();
             }
             catch (Exception ex)
@@ -100,27 +112,56 @@ namespace TDXAirMechanic.Services.Effects
             if (js == null || _springEffect != null) return;
             try
             {
-                var axisObjects = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator).OrderBy(a => a.Usage).ToList();
+                var axisObjects = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
+                    .OrderBy(a => a.Usage)
+                    .ToList();
+
                 if (axisObjects.Count == 0)
                 {
-                    axisObjects = js.GetObjects(DeviceObjectTypeFlags.Axis).Where(a => a.Usage == 48 || a.Usage == 49).OrderBy(a => a.Usage).ToList();
+                    axisObjects = js.GetObjects(DeviceObjectTypeFlags.Axis)
+                        .Where(a => a.Usage == 48 || a.Usage == 49)
+                        .OrderBy(a => a.Usage)
+                        .ToList();
                 }
-                if (axisObjects.Count == 0) return;
+
+                if (axisObjects.Count == 0)
+                    return;
+
                 int[] axes = axisObjects.Select(a => a.Offset).ToArray();
                 int[] dirs = new int[axes.Length];
                 _springAxes = axes;
                 _springAxisUsages = axisObjects.Select(a => a.Usage).ToArray();
 
                 var springInfo = js.GetEffects(EffectType.Condition).FirstOrDefault();
-                if (springInfo == null) return;
+                if (springInfo == null)
+                    return;
 
-                var ep = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0 };
+                var ep = new EffectParameters
+                {
+                    Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                    Duration = int.MaxValue,
+                    SamplePeriod = 0,
+                    Gain = 10000,
+                    TriggerButton = -1,
+                    TriggerRepeatInterval = 0
+                };
                 ep.SetAxes(axes, dirs);
 
-                var cs = new ConditionSet { Conditions = new Condition[axes.Length] };
+                var cs = new ConditionSet
+                {
+                    Conditions = new Condition[axes.Length]
+                };
                 for (int i = 0; i < axes.Length; i++)
                 {
-                    cs.Conditions[i] = new Condition { Offset = 0, PositiveCoefficient = 10000, NegativeCoefficient = 10000, DeadBand = 0, PositiveSaturation = 10000, NegativeSaturation = 10000 };
+                    cs.Conditions[i] = new Condition
+                    {
+                        Offset = 0,
+                        PositiveCoefficient = 10000,
+                        NegativeCoefficient = 10000,
+                        DeadBand = 0,
+                        PositiveSaturation = 10000,
+                        NegativeSaturation = 10000
+                    };
                 }
                 ep.Parameters = cs;
                 _springEffect = new Effect(js, springInfo.Guid, ep);
@@ -144,14 +185,36 @@ namespace TDXAirMechanic.Services.Effects
                 int[] axes = _springAxes;
                 int[] dirs = new int[axes.Length];
                 int coeff = _lastSpringCoeff > 0 ? _lastSpringCoeff : 10000;
-                var update = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0 };
+
+                var update = new EffectParameters
+                {
+                    Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                    Duration = int.MaxValue,
+                    SamplePeriod = 0,
+                    Gain = 10000,
+                    TriggerButton = -1,
+                    TriggerRepeatInterval = 0
+                };
                 update.SetAxes(axes, dirs);
-                var cs = new ConditionSet { Conditions = new Condition[axes.Length] };
+
+                var cs = new ConditionSet
+                {
+                    Conditions = new Condition[axes.Length]
+                };
                 for (int i = 0; i < axes.Length; i++)
                 {
                     int usage = _springAxisUsages != null && i < _springAxisUsages.Length ? _springAxisUsages[i] : (short)0;
                     int offset = (usage == 48) ? _trimOffsetX : (usage == 49) ? _trimOffsetY : 0;
-                    cs.Conditions[i] = new Condition { Offset = offset, PositiveCoefficient = coeff, NegativeCoefficient = coeff, DeadBand = 0, PositiveSaturation = 10000, NegativeSaturation = 10000 };
+
+                    cs.Conditions[i] = new Condition
+                    {
+                        Offset = offset,
+                        PositiveCoefficient = coeff,
+                        NegativeCoefficient = coeff,
+                        DeadBand = 0,
+                        PositiveSaturation = 10000,
+                        NegativeSaturation = 10000
+                    };
                 }
                 update.Parameters = cs;
                 _springEffect.SetParameters(update, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);
@@ -168,34 +231,87 @@ namespace TDXAirMechanic.Services.Effects
             try
             {
                 double ias = Math.Max(0, data.IAS);
-                double barber = data.Barber;
-                double factor = 0;
-                if (barber > 0) factor = Math.Clamp(ias / barber, 0.0, 1.0);
-                else factor = Math.Clamp(ias / 250.0, 0.0, 1.0);
-                const int minCoeff = 1000;
+                double barber = Math.Clamp(data.Barber, 200, 400);
+
                 const int maxCoeff = 10000;
-                int coeff = (int)Math.Round(minCoeff + factor * (maxCoeff - minCoeff));
-                if (Math.Abs(coeff - _lastSpringCoeff) < 100) { ApplySpringOffsets(); return; }
+
+                int coeff = (int)(maxCoeff / (1 + Math.Pow(Math.E, (-1 * (5 / barber) * (ias - (barber / 2))))));
+
+                // TODO: remove this code if spring dynamic OK
+                //double factor = 0;
+                //const int minCoeff = 1000;
+                //ias = Math.Max(0, data.IAS);
+                //barber = data.Barber;
+                //factor = 0;
+                //if (barber > 0)
+                //    factor = Math.Clamp(ias / barber, 0.0, 1.0);
+                //else
+                //    factor = Math.Clamp(ias / 250.0, 0.0, 1.0);
+                //
+                //int coeff = (int)Math.Round(minCoeff + factor * (maxCoeff - minCoeff));
+
+                if (Math.Abs(coeff - _lastSpringCoeff) < 100)
+                {
+                    ApplySpringOffsets();
+                    return;
+                }
+
                 var axes = _springAxes;
                 if (axes == null || axes.Length == 0)
                 {
-                    var js = GetJoystickSafe(); if (js == null) return;
-                    var objs = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator).OrderBy(a => a.Usage).ToList();
-                    if (objs.Count == 0) objs = js.GetObjects(DeviceObjectTypeFlags.Axis).Where(a => a.Usage == 48 || a.Usage == 49).OrderBy(a => a.Usage).ToList();
+                    var js = GetJoystickSafe();
+                    if (js == null) return;
+
+                    var objs = js.GetObjects(DeviceObjectTypeFlags.ForceFeedbackActuator)
+                        .OrderBy(a => a.Usage)
+                        .ToList();
+
+                    if (objs.Count == 0)
+                    {
+                        objs = js.GetObjects(DeviceObjectTypeFlags.Axis)
+                            .Where(a => a.Usage == 48 || a.Usage == 49)
+                            .OrderBy(a => a.Usage)
+                            .ToList();
+                    }
+
                     axes = objs.Select(a => a.Offset).ToArray();
                     _springAxes = axes;
                     _springAxisUsages = objs.Select(a => a.Usage).ToArray();
                 }
+
                 if (axes == null || axes.Length == 0) return;
+
                 int[] dirs = new int[axes.Length];
-                var update = new EffectParameters { Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian, Duration = int.MaxValue, SamplePeriod = 0, Gain = 10000, TriggerButton = -1, TriggerRepeatInterval = 0 };
+
+                var update = new EffectParameters
+                {
+                    Flags = EffectFlags.ObjectOffsets | EffectFlags.Cartesian,
+                    Duration = int.MaxValue,
+                    SamplePeriod = 0,
+                    Gain = 10000,
+                    TriggerButton = -1,
+                    TriggerRepeatInterval = 0
+                };
                 update.SetAxes(axes, dirs);
-                var cs = new ConditionSet { Conditions = new Condition[axes.Length] };
+
+                var cs = new ConditionSet
+                {
+                    Conditions = new Condition[axes.Length]
+                };
                 for (int i = 0; i < axes.Length; i++)
                 {
                     int usage = _springAxisUsages != null && i < _springAxisUsages.Length ? _springAxisUsages[i] : (short)0;
                     int offset = (usage == 48) ? _trimOffsetX : (usage == 49) ? _trimOffsetY : 0;
-                    cs.Conditions[i] = new Condition { Offset = offset, PositiveCoefficient = coeff, NegativeCoefficient = coeff, DeadBand = 0, PositiveSaturation = 10000, NegativeSaturation = 10000 };
+
+                    cs.Conditions[i] = new Condition
+                    {
+                        Offset = offset,
+                        PositiveCoefficient = coeff,
+                        NegativeCoefficient = coeff,
+                        DeadBand = 0,
+                        PositiveSaturation = 10000,
+                        NegativeSaturation = 10000
+                    };
                 }
                 update.Parameters = cs;
                 _springEffect.SetParameters(update, EffectParameterFlags.TypeSpecificParameters | EffectParameterFlags.Start);

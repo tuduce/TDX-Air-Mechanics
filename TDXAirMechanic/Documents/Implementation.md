@@ -125,7 +125,12 @@ Effects were refactored into separate classes under `Services/Effects`, each own
 - `GroundVibrationEffect`
   - Two periodic layers plus optional `ConstantForce` pulses on concrete.
   - Active only while `OnGround >= 0.5`.
-  - Surface mapping: asphalt (minimal high-frequency), grass (low-frequency increasing with speed), concrete (background + jolts every ~20 m).
+  - Surface mapping values (MSFS SDK):
+    - Concrete = 0
+    - Grass = 1
+    - Asphalt = 4
+    - Tarmac = 17
+  - Behavior: asphalt (minimal high-frequency), grass (low-frequency increasing with speed), concrete (background + jolts every ~20 m).
 
 All classes implement: `AttachDevice`, `DetachDevice`, `ApplyProfile`, `Update`, `Reset`, `Start`, `Stop`, `Dispose`.
 
