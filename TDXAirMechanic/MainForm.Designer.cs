@@ -32,31 +32,36 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             materialTabControl1 = new MaterialSkin.Controls.MaterialTabControl();
             tabPageDashboard = new TabPage();
-            materialCard2 = new MaterialSkin.Controls.MaterialCard();
-            FlightStatusLabel = new MaterialSkin.Controls.MaterialLabel();
-            buttonConnectSimulator = new MaterialSkin.Controls.MaterialFloatingActionButton();
+            buttonConnectJoystick = new MaterialSkin.Controls.MaterialFloatingActionButton();
             imageListIcons = new ImageList(components);
-            materialCard1 = new MaterialSkin.Controls.MaterialCard();
+            materialCard2 = new MaterialSkin.Controls.MaterialCard();
             labelJoystickStatus = new MaterialSkin.Controls.MaterialLabel();
+            buttonConnectSimulator = new MaterialSkin.Controls.MaterialFloatingActionButton();
+            materialCard1 = new MaterialSkin.Controls.MaterialCard();
             labelAircraftName = new MaterialSkin.Controls.MaterialLabel();
+            FlightStatusLabel = new MaterialSkin.Controls.MaterialLabel();
             tabPageEffects = new TabPage();
-            GroundVibrationSwitch = new MaterialSkin.Controls.MaterialSwitch();
-            GearVibratesSwitch = new MaterialSkin.Controls.MaterialSwitch();
+            flowLayoutPanel1 = new FlowLayoutPanel();
+            SwitchCenterSpring = new MaterialSkin.Controls.MaterialSwitch();
+            panel2 = new Panel();
+            switchDynamicSpring = new MaterialSkin.Controls.MaterialSwitch();
+            panel3 = new Panel();
+            TrimSwitch = new MaterialSkin.Controls.MaterialSwitch();
+            panel1 = new Panel();
             JoyBtnExplainLabel = new MaterialSkin.Controls.MaterialLabel();
+            PitchUpLabel = new MaterialSkin.Controls.MaterialLabel();
+            PitchUpTextBox = new MaterialSkin.Controls.MaterialTextBox();
+            PitchDownLabel = new MaterialSkin.Controls.MaterialLabel();
+            PitchDownTextBox = new MaterialSkin.Controls.MaterialTextBox();
             RollRightTextBox = new MaterialSkin.Controls.MaterialTextBox();
+            RollLeftLabel = new MaterialSkin.Controls.MaterialLabel();
             RollRightLabel = new MaterialSkin.Controls.MaterialLabel();
             RollLeftTextBox = new MaterialSkin.Controls.MaterialTextBox();
-            RollLeftLabel = new MaterialSkin.Controls.MaterialLabel();
-            PitchDownTextBox = new MaterialSkin.Controls.MaterialTextBox();
-            PitchDownLabel = new MaterialSkin.Controls.MaterialLabel();
-            PitchUpTextBox = new MaterialSkin.Controls.MaterialTextBox();
-            PitchUpLabel = new MaterialSkin.Controls.MaterialLabel();
-            TrimSwitch = new MaterialSkin.Controls.MaterialSwitch();
+            switchStickShaker = new MaterialSkin.Controls.MaterialSwitch();
+            GearVibratesSwitch = new MaterialSkin.Controls.MaterialSwitch();
+            GroundVibrationSwitch = new MaterialSkin.Controls.MaterialSwitch();
             buttonSaveNewProfile = new MaterialSkin.Controls.MaterialButton();
             comboBoxProfiles = new MaterialSkin.Controls.MaterialComboBox();
-            switchStickShaker = new MaterialSkin.Controls.MaterialSwitch();
-            switchDynamicSpring = new MaterialSkin.Controls.MaterialSwitch();
-            SwitchCenterSpring = new MaterialSkin.Controls.MaterialSwitch();
             tabPageDevices = new TabPage();
             textJoystickInfo = new MaterialSkin.Controls.MaterialMultiLineTextBox();
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
@@ -67,6 +72,10 @@
             materialCard2.SuspendLayout();
             materialCard1.SuspendLayout();
             tabPageEffects.SuspendLayout();
+            flowLayoutPanel1.SuspendLayout();
+            panel2.SuspendLayout();
+            panel3.SuspendLayout();
+            panel1.SuspendLayout();
             tabPageDevices.SuspendLayout();
             SuspendLayout();
             // 
@@ -89,6 +98,8 @@
             // 
             // tabPageDashboard
             // 
+            tabPageDashboard.BackColor = Color.WhiteSmoke;
+            tabPageDashboard.Controls.Add(buttonConnectJoystick);
             tabPageDashboard.Controls.Add(materialCard2);
             tabPageDashboard.Controls.Add(buttonConnectSimulator);
             tabPageDashboard.Controls.Add(materialCard1);
@@ -99,12 +110,36 @@
             tabPageDashboard.Size = new Size(789, 340);
             tabPageDashboard.TabIndex = 0;
             tabPageDashboard.Text = "Dashboard";
-            tabPageDashboard.UseVisualStyleBackColor = true;
+            // 
+            // buttonConnectJoystick
+            // 
+            buttonConnectJoystick.Depth = 0;
+            buttonConnectJoystick.ForeColor = SystemColors.ControlText;
+            buttonConnectJoystick.Icon = Properties.Resources.icons8_joystick_48;
+            buttonConnectJoystick.ImageKey = "icons8-joystick-48.png";
+            buttonConnectJoystick.ImageList = imageListIcons;
+            buttonConnectJoystick.Location = new Point(298, 114);
+            buttonConnectJoystick.MouseState = MaterialSkin.MouseState.HOVER;
+            buttonConnectJoystick.Name = "buttonConnectJoystick";
+            buttonConnectJoystick.Size = new Size(56, 56);
+            buttonConnectJoystick.TabIndex = 3;
+            buttonConnectJoystick.UseVisualStyleBackColor = true;
+            // 
+            // imageListIcons
+            // 
+            imageListIcons.ColorDepth = ColorDepth.Depth32Bit;
+            imageListIcons.ImageStream = (ImageListStreamer)resources.GetObject("imageListIcons.ImageStream");
+            imageListIcons.TransparentColor = Color.Transparent;
+            imageListIcons.Images.SetKeyName(0, "icons8-settings-48.png");
+            imageListIcons.Images.SetKeyName(1, "icons8-depth-effect-48.png");
+            imageListIcons.Images.SetKeyName(2, "icons8-dashboard-layout-48.png");
+            imageListIcons.Images.SetKeyName(3, "icons8-joystick-48.png");
+            imageListIcons.Images.SetKeyName(4, "icons8-paper-airplane-48.png");
             // 
             // materialCard2
             // 
             materialCard2.BackColor = Color.FromArgb(255, 255, 255);
-            materialCard2.Controls.Add(FlightStatusLabel);
+            materialCard2.Controls.Add(labelJoystickStatus);
             materialCard2.Depth = 0;
             materialCard2.ForeColor = Color.FromArgb(222, 0, 0, 0);
             materialCard2.Location = new Point(17, 104);
@@ -115,17 +150,17 @@
             materialCard2.Size = new Size(310, 76);
             materialCard2.TabIndex = 2;
             // 
-            // FlightStatusLabel
+            // labelJoystickStatus
             // 
-            FlightStatusLabel.AutoSize = true;
-            FlightStatusLabel.Depth = 0;
-            FlightStatusLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            FlightStatusLabel.Location = new Point(17, 14);
-            FlightStatusLabel.MouseState = MaterialSkin.MouseState.HOVER;
-            FlightStatusLabel.Name = "FlightStatusLabel";
-            FlightStatusLabel.Size = new Size(89, 19);
-            FlightStatusLabel.TabIndex = 3;
-            FlightStatusLabel.Text = "Flight status";
+            labelJoystickStatus.AutoSize = true;
+            labelJoystickStatus.Depth = 0;
+            labelJoystickStatus.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            labelJoystickStatus.Location = new Point(17, 14);
+            labelJoystickStatus.MouseState = MaterialSkin.MouseState.HOVER;
+            labelJoystickStatus.Name = "labelJoystickStatus";
+            labelJoystickStatus.Size = new Size(141, 19);
+            labelJoystickStatus.TabIndex = 0;
+            labelJoystickStatus.Text = "No joystick selected";
             // 
             // buttonConnectSimulator
             // 
@@ -141,22 +176,11 @@
             buttonConnectSimulator.UseVisualStyleBackColor = true;
             buttonConnectSimulator.Click += buttonConnectSimulator_Click;
             // 
-            // imageListIcons
-            // 
-            imageListIcons.ColorDepth = ColorDepth.Depth32Bit;
-            imageListIcons.ImageStream = (ImageListStreamer)resources.GetObject("imageListIcons.ImageStream");
-            imageListIcons.TransparentColor = Color.Transparent;
-            imageListIcons.Images.SetKeyName(0, "icons8-settings-48.png");
-            imageListIcons.Images.SetKeyName(1, "icons8-depth-effect-48.png");
-            imageListIcons.Images.SetKeyName(2, "icons8-dashboard-layout-48.png");
-            imageListIcons.Images.SetKeyName(3, "icons8-joystick-48.png");
-            imageListIcons.Images.SetKeyName(4, "icons8-paper-airplane-48.png");
-            // 
             // materialCard1
             // 
             materialCard1.BackColor = Color.FromArgb(255, 255, 255);
-            materialCard1.Controls.Add(labelJoystickStatus);
             materialCard1.Controls.Add(labelAircraftName);
+            materialCard1.Controls.Add(FlightStatusLabel);
             materialCard1.Depth = 0;
             materialCard1.ForeColor = Color.FromArgb(222, 0, 0, 0);
             materialCard1.Location = new Point(17, 14);
@@ -166,18 +190,6 @@
             materialCard1.Padding = new Padding(14);
             materialCard1.Size = new Size(310, 76);
             materialCard1.TabIndex = 0;
-            // 
-            // labelJoystickStatus
-            // 
-            labelJoystickStatus.AutoSize = true;
-            labelJoystickStatus.Depth = 0;
-            labelJoystickStatus.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            labelJoystickStatus.Location = new Point(17, 43);
-            labelJoystickStatus.MouseState = MaterialSkin.MouseState.HOVER;
-            labelJoystickStatus.Name = "labelJoystickStatus";
-            labelJoystickStatus.Size = new Size(141, 19);
-            labelJoystickStatus.TabIndex = 0;
-            labelJoystickStatus.Text = "No joystick selected";
             // 
             // labelAircraftName
             // 
@@ -192,27 +204,25 @@
             labelAircraftName.TabIndex = 0;
             labelAircraftName.Text = "Aircraft profile not selected";
             // 
+            // FlightStatusLabel
+            // 
+            FlightStatusLabel.AutoSize = true;
+            FlightStatusLabel.Depth = 0;
+            FlightStatusLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            FlightStatusLabel.Location = new Point(17, 43);
+            FlightStatusLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            FlightStatusLabel.Name = "FlightStatusLabel";
+            FlightStatusLabel.Size = new Size(89, 19);
+            FlightStatusLabel.TabIndex = 3;
+            FlightStatusLabel.Text = "Flight status";
+            // 
             // tabPageEffects
             // 
             tabPageEffects.AutoScroll = true;
             tabPageEffects.BackColor = Color.WhiteSmoke;
-            tabPageEffects.Controls.Add(GroundVibrationSwitch);
-            tabPageEffects.Controls.Add(GearVibratesSwitch);
-            tabPageEffects.Controls.Add(JoyBtnExplainLabel);
-            tabPageEffects.Controls.Add(RollRightTextBox);
-            tabPageEffects.Controls.Add(RollRightLabel);
-            tabPageEffects.Controls.Add(RollLeftTextBox);
-            tabPageEffects.Controls.Add(RollLeftLabel);
-            tabPageEffects.Controls.Add(PitchDownTextBox);
-            tabPageEffects.Controls.Add(PitchDownLabel);
-            tabPageEffects.Controls.Add(PitchUpTextBox);
-            tabPageEffects.Controls.Add(PitchUpLabel);
-            tabPageEffects.Controls.Add(TrimSwitch);
+            tabPageEffects.Controls.Add(flowLayoutPanel1);
             tabPageEffects.Controls.Add(buttonSaveNewProfile);
             tabPageEffects.Controls.Add(comboBoxProfiles);
-            tabPageEffects.Controls.Add(switchStickShaker);
-            tabPageEffects.Controls.Add(switchDynamicSpring);
-            tabPageEffects.Controls.Add(SwitchCenterSpring);
             tabPageEffects.ImageKey = "icons8-depth-effect-48.png";
             tabPageEffects.Location = new Point(4, 39);
             tabPageEffects.Name = "tabPageEffects";
@@ -221,47 +231,185 @@
             tabPageEffects.TabIndex = 1;
             tabPageEffects.Text = "Effects";
             // 
-            // GroundVibrationSwitch
+            // flowLayoutPanel1
             // 
-            GroundVibrationSwitch.AutoSize = true;
-            GroundVibrationSwitch.Depth = 0;
-            GroundVibrationSwitch.Location = new Point(13, 387);
-            GroundVibrationSwitch.Margin = new Padding(0);
-            GroundVibrationSwitch.MouseLocation = new Point(-1, -1);
-            GroundVibrationSwitch.MouseState = MaterialSkin.MouseState.HOVER;
-            GroundVibrationSwitch.Name = "GroundVibrationSwitch";
-            GroundVibrationSwitch.Ripple = true;
-            GroundVibrationSwitch.Size = new Size(184, 37);
-            GroundVibrationSwitch.TabIndex = 14;
-            GroundVibrationSwitch.Text = "Ground vibrations";
-            GroundVibrationSwitch.UseVisualStyleBackColor = true;
+            flowLayoutPanel1.AutoSize = true;
+            flowLayoutPanel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            flowLayoutPanel1.Controls.Add(SwitchCenterSpring);
+            flowLayoutPanel1.Controls.Add(panel2);
+            flowLayoutPanel1.Controls.Add(panel3);
+            flowLayoutPanel1.Controls.Add(panel1);
+            flowLayoutPanel1.Controls.Add(switchStickShaker);
+            flowLayoutPanel1.Controls.Add(GearVibratesSwitch);
+            flowLayoutPanel1.Controls.Add(GroundVibrationSwitch);
+            flowLayoutPanel1.FlowDirection = FlowDirection.TopDown;
+            flowLayoutPanel1.Location = new Point(6, 61);
+            flowLayoutPanel1.Name = "flowLayoutPanel1";
+            flowLayoutPanel1.Size = new Size(597, 326);
+            flowLayoutPanel1.TabIndex = 15;
             // 
-            // GearVibratesSwitch
+            // SwitchCenterSpring
             // 
-            GearVibratesSwitch.AutoSize = true;
-            GearVibratesSwitch.Depth = 0;
-            GearVibratesSwitch.Location = new Point(13, 350);
-            GearVibratesSwitch.Margin = new Padding(0);
-            GearVibratesSwitch.MouseLocation = new Point(-1, -1);
-            GearVibratesSwitch.MouseState = MaterialSkin.MouseState.HOVER;
-            GearVibratesSwitch.Name = "GearVibratesSwitch";
-            GearVibratesSwitch.Ripple = true;
-            GearVibratesSwitch.Size = new Size(165, 37);
-            GearVibratesSwitch.TabIndex = 13;
-            GearVibratesSwitch.Text = "Gear vibrations";
-            GearVibratesSwitch.UseVisualStyleBackColor = true;
+            SwitchCenterSpring.AutoSize = true;
+            SwitchCenterSpring.BackColor = Color.Transparent;
+            SwitchCenterSpring.BackgroundImageLayout = ImageLayout.None;
+            SwitchCenterSpring.Checked = true;
+            SwitchCenterSpring.CheckState = CheckState.Checked;
+            SwitchCenterSpring.Depth = 0;
+            SwitchCenterSpring.Location = new Point(0, 0);
+            SwitchCenterSpring.Margin = new Padding(0);
+            SwitchCenterSpring.MouseLocation = new Point(-1, -1);
+            SwitchCenterSpring.MouseState = MaterialSkin.MouseState.HOVER;
+            SwitchCenterSpring.Name = "SwitchCenterSpring";
+            SwitchCenterSpring.Ripple = true;
+            SwitchCenterSpring.Size = new Size(168, 37);
+            SwitchCenterSpring.TabIndex = 0;
+            SwitchCenterSpring.Text = "Centered spring";
+            SwitchCenterSpring.UseVisualStyleBackColor = false;
+            SwitchCenterSpring.CheckedChanged += SwitchCenterSpring_CheckedChanged;
+            // 
+            // panel2
+            // 
+            panel2.AutoSize = true;
+            panel2.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            panel2.Controls.Add(switchDynamicSpring);
+            panel2.Location = new Point(0, 37);
+            panel2.Margin = new Padding(0);
+            panel2.Name = "panel2";
+            panel2.Padding = new Padding(65, 0, 0, 0);
+            panel2.Size = new Size(274, 37);
+            panel2.TabIndex = 15;
+            // 
+            // switchDynamicSpring
+            // 
+            switchDynamicSpring.AutoSize = true;
+            switchDynamicSpring.Depth = 0;
+            switchDynamicSpring.Location = new Point(65, 0);
+            switchDynamicSpring.Margin = new Padding(0);
+            switchDynamicSpring.MouseLocation = new Point(-1, -1);
+            switchDynamicSpring.MouseState = MaterialSkin.MouseState.HOVER;
+            switchDynamicSpring.Name = "switchDynamicSpring";
+            switchDynamicSpring.Ripple = true;
+            switchDynamicSpring.Size = new Size(209, 37);
+            switchDynamicSpring.TabIndex = 1;
+            switchDynamicSpring.Text = "Dynamic spring force";
+            switchDynamicSpring.UseVisualStyleBackColor = true;
+            // 
+            // panel3
+            // 
+            panel3.AutoSize = true;
+            panel3.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            panel3.Controls.Add(TrimSwitch);
+            panel3.Location = new Point(0, 74);
+            panel3.Margin = new Padding(0);
+            panel3.Name = "panel3";
+            panel3.Padding = new Padding(65, 0, 0, 0);
+            panel3.Size = new Size(223, 37);
+            panel3.TabIndex = 16;
+            // 
+            // TrimSwitch
+            // 
+            TrimSwitch.AutoSize = true;
+            TrimSwitch.Depth = 0;
+            TrimSwitch.Location = new Point(65, 0);
+            TrimSwitch.Margin = new Padding(0);
+            TrimSwitch.MouseLocation = new Point(-1, -1);
+            TrimSwitch.MouseState = MaterialSkin.MouseState.HOVER;
+            TrimSwitch.Name = "TrimSwitch";
+            TrimSwitch.Ripple = true;
+            TrimSwitch.Size = new Size(158, 37);
+            TrimSwitch.TabIndex = 3;
+            TrimSwitch.Text = "Dynamic Trim";
+            TrimSwitch.UseVisualStyleBackColor = true;
+            // 
+            // panel1
+            // 
+            panel1.AutoSize = true;
+            panel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            panel1.Controls.Add(JoyBtnExplainLabel);
+            panel1.Controls.Add(PitchUpLabel);
+            panel1.Controls.Add(PitchUpTextBox);
+            panel1.Controls.Add(PitchDownLabel);
+            panel1.Controls.Add(PitchDownTextBox);
+            panel1.Controls.Add(RollRightTextBox);
+            panel1.Controls.Add(RollLeftLabel);
+            panel1.Controls.Add(RollRightLabel);
+            panel1.Controls.Add(RollLeftTextBox);
+            panel1.Location = new Point(120, 111);
+            panel1.Margin = new Padding(120, 0, 3, 0);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(474, 104);
+            panel1.TabIndex = 4;
             // 
             // JoyBtnExplainLabel
             // 
             JoyBtnExplainLabel.AutoSize = true;
             JoyBtnExplainLabel.Depth = 0;
             JoyBtnExplainLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            JoyBtnExplainLabel.Location = new Point(85, 203);
+            JoyBtnExplainLabel.Location = new Point(3, 0);
             JoyBtnExplainLabel.MouseState = MaterialSkin.MouseState.HOVER;
             JoyBtnExplainLabel.Name = "JoyBtnExplainLabel";
             JoyBtnExplainLabel.Size = new Size(285, 19);
             JoyBtnExplainLabel.TabIndex = 12;
             JoyBtnExplainLabel.Text = "Click in the textbox to set joystick button";
+            // 
+            // PitchUpLabel
+            // 
+            PitchUpLabel.AutoSize = true;
+            PitchUpLabel.Depth = 0;
+            PitchUpLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            PitchUpLabel.Location = new Point(3, 29);
+            PitchUpLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            PitchUpLabel.Name = "PitchUpLabel";
+            PitchUpLabel.Size = new Size(60, 19);
+            PitchUpLabel.TabIndex = 4;
+            PitchUpLabel.Text = "Pitch Up";
+            // 
+            // PitchUpTextBox
+            // 
+            PitchUpTextBox.AnimateReadOnly = false;
+            PitchUpTextBox.BorderStyle = BorderStyle.None;
+            PitchUpTextBox.Depth = 0;
+            PitchUpTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
+            PitchUpTextBox.LeadingIcon = null;
+            PitchUpTextBox.Location = new Point(3, 51);
+            PitchUpTextBox.MaxLength = 50;
+            PitchUpTextBox.MouseState = MaterialSkin.MouseState.OUT;
+            PitchUpTextBox.Multiline = false;
+            PitchUpTextBox.Name = "PitchUpTextBox";
+            PitchUpTextBox.Size = new Size(111, 50);
+            PitchUpTextBox.TabIndex = 5;
+            PitchUpTextBox.Text = "";
+            PitchUpTextBox.TrailingIcon = null;
+            // 
+            // PitchDownLabel
+            // 
+            PitchDownLabel.AutoSize = true;
+            PitchDownLabel.Depth = 0;
+            PitchDownLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            PitchDownLabel.Location = new Point(121, 29);
+            PitchDownLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            PitchDownLabel.Name = "PitchDownLabel";
+            PitchDownLabel.Size = new Size(82, 19);
+            PitchDownLabel.TabIndex = 6;
+            PitchDownLabel.Text = "Pitch Down";
+            // 
+            // PitchDownTextBox
+            // 
+            PitchDownTextBox.AnimateReadOnly = false;
+            PitchDownTextBox.BorderStyle = BorderStyle.None;
+            PitchDownTextBox.Depth = 0;
+            PitchDownTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
+            PitchDownTextBox.LeadingIcon = null;
+            PitchDownTextBox.Location = new Point(121, 51);
+            PitchDownTextBox.MaxLength = 50;
+            PitchDownTextBox.MouseState = MaterialSkin.MouseState.OUT;
+            PitchDownTextBox.Multiline = false;
+            PitchDownTextBox.Name = "PitchDownTextBox";
+            PitchDownTextBox.Size = new Size(111, 50);
+            PitchDownTextBox.TabIndex = 7;
+            PitchDownTextBox.Text = "";
+            PitchDownTextBox.TrailingIcon = null;
             // 
             // RollRightTextBox
             // 
@@ -270,7 +418,7 @@
             RollRightTextBox.Depth = 0;
             RollRightTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
             RollRightTextBox.LeadingIcon = null;
-            RollRightTextBox.Location = new Point(441, 254);
+            RollRightTextBox.Location = new Point(360, 51);
             RollRightTextBox.MaxLength = 50;
             RollRightTextBox.MouseState = MaterialSkin.MouseState.OUT;
             RollRightTextBox.Multiline = false;
@@ -280,12 +428,24 @@
             RollRightTextBox.Text = "";
             RollRightTextBox.TrailingIcon = null;
             // 
+            // RollLeftLabel
+            // 
+            RollLeftLabel.AutoSize = true;
+            RollLeftLabel.Depth = 0;
+            RollLeftLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            RollLeftLabel.Location = new Point(241, 29);
+            RollLeftLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            RollLeftLabel.Name = "RollLeftLabel";
+            RollLeftLabel.Size = new Size(60, 19);
+            RollLeftLabel.TabIndex = 8;
+            RollLeftLabel.Text = "Roll Left";
+            // 
             // RollRightLabel
             // 
             RollRightLabel.AutoSize = true;
             RollRightLabel.Depth = 0;
             RollRightLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            RollRightLabel.Location = new Point(441, 232);
+            RollRightLabel.Location = new Point(360, 29);
             RollRightLabel.MouseState = MaterialSkin.MouseState.HOVER;
             RollRightLabel.Name = "RollRightLabel";
             RollRightLabel.Size = new Size(69, 19);
@@ -299,7 +459,7 @@
             RollLeftTextBox.Depth = 0;
             RollLeftTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
             RollLeftTextBox.LeadingIcon = null;
-            RollLeftTextBox.Location = new Point(322, 254);
+            RollLeftTextBox.Location = new Point(241, 51);
             RollLeftTextBox.MaxLength = 50;
             RollLeftTextBox.MouseState = MaterialSkin.MouseState.OUT;
             RollLeftTextBox.Multiline = false;
@@ -309,90 +469,52 @@
             RollLeftTextBox.Text = "";
             RollLeftTextBox.TrailingIcon = null;
             // 
-            // RollLeftLabel
+            // switchStickShaker
             // 
-            RollLeftLabel.AutoSize = true;
-            RollLeftLabel.Depth = 0;
-            RollLeftLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            RollLeftLabel.Location = new Point(322, 232);
-            RollLeftLabel.MouseState = MaterialSkin.MouseState.HOVER;
-            RollLeftLabel.Name = "RollLeftLabel";
-            RollLeftLabel.Size = new Size(60, 19);
-            RollLeftLabel.TabIndex = 8;
-            RollLeftLabel.Text = "Roll Left";
+            switchStickShaker.AutoSize = true;
+            switchStickShaker.Checked = true;
+            switchStickShaker.CheckState = CheckState.Checked;
+            switchStickShaker.Depth = 0;
+            switchStickShaker.Location = new Point(0, 215);
+            switchStickShaker.Margin = new Padding(0);
+            switchStickShaker.MouseLocation = new Point(-1, -1);
+            switchStickShaker.MouseState = MaterialSkin.MouseState.HOVER;
+            switchStickShaker.Name = "switchStickShaker";
+            switchStickShaker.Ripple = true;
+            switchStickShaker.Size = new Size(144, 37);
+            switchStickShaker.TabIndex = 2;
+            switchStickShaker.Text = "Stick shaker";
+            switchStickShaker.UseVisualStyleBackColor = true;
             // 
-            // PitchDownTextBox
+            // GearVibratesSwitch
             // 
-            PitchDownTextBox.AnimateReadOnly = false;
-            PitchDownTextBox.BorderStyle = BorderStyle.None;
-            PitchDownTextBox.Depth = 0;
-            PitchDownTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
-            PitchDownTextBox.LeadingIcon = null;
-            PitchDownTextBox.Location = new Point(202, 254);
-            PitchDownTextBox.MaxLength = 50;
-            PitchDownTextBox.MouseState = MaterialSkin.MouseState.OUT;
-            PitchDownTextBox.Multiline = false;
-            PitchDownTextBox.Name = "PitchDownTextBox";
-            PitchDownTextBox.Size = new Size(111, 50);
-            PitchDownTextBox.TabIndex = 7;
-            PitchDownTextBox.Text = "";
-            PitchDownTextBox.TrailingIcon = null;
+            GearVibratesSwitch.AutoSize = true;
+            GearVibratesSwitch.Depth = 0;
+            GearVibratesSwitch.Location = new Point(0, 252);
+            GearVibratesSwitch.Margin = new Padding(0);
+            GearVibratesSwitch.MouseLocation = new Point(-1, -1);
+            GearVibratesSwitch.MouseState = MaterialSkin.MouseState.HOVER;
+            GearVibratesSwitch.Name = "GearVibratesSwitch";
+            GearVibratesSwitch.Ripple = true;
+            GearVibratesSwitch.Size = new Size(165, 37);
+            GearVibratesSwitch.TabIndex = 13;
+            GearVibratesSwitch.Text = "Gear vibrations";
+            GearVibratesSwitch.UseVisualStyleBackColor = true;
             // 
-            // PitchDownLabel
+            // GroundVibrationSwitch
             // 
-            PitchDownLabel.AutoSize = true;
-            PitchDownLabel.Depth = 0;
-            PitchDownLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            PitchDownLabel.Location = new Point(202, 232);
-            PitchDownLabel.MouseState = MaterialSkin.MouseState.HOVER;
-            PitchDownLabel.Name = "PitchDownLabel";
-            PitchDownLabel.Size = new Size(82, 19);
-            PitchDownLabel.TabIndex = 6;
-            PitchDownLabel.Text = "Pitch Down";
-            // 
-            // PitchUpTextBox
-            // 
-            PitchUpTextBox.AnimateReadOnly = false;
-            PitchUpTextBox.BorderStyle = BorderStyle.None;
-            PitchUpTextBox.Depth = 0;
-            PitchUpTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
-            PitchUpTextBox.LeadingIcon = null;
-            PitchUpTextBox.Location = new Point(84, 254);
-            PitchUpTextBox.MaxLength = 50;
-            PitchUpTextBox.MouseState = MaterialSkin.MouseState.OUT;
-            PitchUpTextBox.Multiline = false;
-            PitchUpTextBox.Name = "PitchUpTextBox";
-            PitchUpTextBox.Size = new Size(111, 50);
-            PitchUpTextBox.TabIndex = 5;
-            PitchUpTextBox.Text = "";
-            PitchUpTextBox.TrailingIcon = null;
-            // 
-            // PitchUpLabel
-            // 
-            PitchUpLabel.AutoSize = true;
-            PitchUpLabel.Depth = 0;
-            PitchUpLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
-            PitchUpLabel.Location = new Point(84, 232);
-            PitchUpLabel.MouseState = MaterialSkin.MouseState.HOVER;
-            PitchUpLabel.Name = "PitchUpLabel";
-            PitchUpLabel.Size = new Size(60, 19);
-            PitchUpLabel.TabIndex = 4;
-            PitchUpLabel.Text = "Pitch Up";
-            // 
-            // TrimSwitch
-            // 
-            TrimSwitch.AutoSize = true;
-            TrimSwitch.Depth = 0;
-            TrimSwitch.Location = new Point(63, 158);
-            TrimSwitch.Margin = new Padding(0);
-            TrimSwitch.MouseLocation = new Point(-1, -1);
-            TrimSwitch.MouseState = MaterialSkin.MouseState.HOVER;
-            TrimSwitch.Name = "TrimSwitch";
-            TrimSwitch.Ripple = true;
-            TrimSwitch.Size = new Size(158, 37);
-            TrimSwitch.TabIndex = 3;
-            TrimSwitch.Text = "Dynamic Trim";
-            TrimSwitch.UseVisualStyleBackColor = true;
+            GroundVibrationSwitch.AutoSize = true;
+            GroundVibrationSwitch.Depth = 0;
+            GroundVibrationSwitch.Location = new Point(0, 289);
+            GroundVibrationSwitch.Margin = new Padding(0);
+            GroundVibrationSwitch.MouseLocation = new Point(-1, -1);
+            GroundVibrationSwitch.MouseState = MaterialSkin.MouseState.HOVER;
+            GroundVibrationSwitch.Name = "GroundVibrationSwitch";
+            GroundVibrationSwitch.Ripple = true;
+            GroundVibrationSwitch.Size = new Size(184, 37);
+            GroundVibrationSwitch.TabIndex = 14;
+            GroundVibrationSwitch.Text = "Ground vibrations";
+            GroundVibrationSwitch.UseVisualStyleBackColor = true;
             // 
             // buttonSaveNewProfile
             // 
@@ -401,7 +523,7 @@
             buttonSaveNewProfile.Depth = 0;
             buttonSaveNewProfile.HighEmphasis = true;
             buttonSaveNewProfile.Icon = null;
-            buttonSaveNewProfile.Location = new Point(322, 11);
+            buttonSaveNewProfile.Location = new Point(322, 9);
             buttonSaveNewProfile.Margin = new Padding(4, 6, 4, 6);
             buttonSaveNewProfile.MouseState = MaterialSkin.MouseState.HOVER;
             buttonSaveNewProfile.Name = "buttonSaveNewProfile";
@@ -425,65 +547,13 @@
             comboBoxProfiles.ForeColor = Color.FromArgb(222, 0, 0, 0);
             comboBoxProfiles.IntegralHeight = false;
             comboBoxProfiles.ItemHeight = 43;
-            comboBoxProfiles.Location = new Point(5, 5);
+            comboBoxProfiles.Location = new Point(6, 6);
             comboBoxProfiles.MaxDropDownItems = 4;
             comboBoxProfiles.MouseState = MaterialSkin.MouseState.OUT;
             comboBoxProfiles.Name = "comboBoxProfiles";
             comboBoxProfiles.Size = new Size(308, 49);
             comboBoxProfiles.StartIndex = 0;
             comboBoxProfiles.TabIndex = 1;
-            // 
-            // switchStickShaker
-            // 
-            switchStickShaker.AutoSize = true;
-            switchStickShaker.Checked = true;
-            switchStickShaker.CheckState = CheckState.Checked;
-            switchStickShaker.Depth = 0;
-            switchStickShaker.Location = new Point(13, 313);
-            switchStickShaker.Margin = new Padding(0);
-            switchStickShaker.MouseLocation = new Point(-1, -1);
-            switchStickShaker.MouseState = MaterialSkin.MouseState.HOVER;
-            switchStickShaker.Name = "switchStickShaker";
-            switchStickShaker.Ripple = true;
-            switchStickShaker.Size = new Size(144, 37);
-            switchStickShaker.TabIndex = 2;
-            switchStickShaker.Text = "Stick shaker";
-            switchStickShaker.UseVisualStyleBackColor = true;
-            // 
-            // switchDynamicSpring
-            // 
-            switchDynamicSpring.AutoSize = true;
-            switchDynamicSpring.Depth = 0;
-            switchDynamicSpring.Location = new Point(63, 112);
-            switchDynamicSpring.Margin = new Padding(0);
-            switchDynamicSpring.MouseLocation = new Point(-1, -1);
-            switchDynamicSpring.MouseState = MaterialSkin.MouseState.HOVER;
-            switchDynamicSpring.Name = "switchDynamicSpring";
-            switchDynamicSpring.Ripple = true;
-            switchDynamicSpring.Size = new Size(209, 37);
-            switchDynamicSpring.TabIndex = 1;
-            switchDynamicSpring.Text = "Dynamic spring force";
-            switchDynamicSpring.UseVisualStyleBackColor = true;
-            // 
-            // SwitchCenterSpring
-            // 
-            SwitchCenterSpring.AutoSize = true;
-            SwitchCenterSpring.BackColor = Color.Transparent;
-            SwitchCenterSpring.BackgroundImageLayout = ImageLayout.None;
-            SwitchCenterSpring.Checked = true;
-            SwitchCenterSpring.CheckState = CheckState.Checked;
-            SwitchCenterSpring.Depth = 0;
-            SwitchCenterSpring.Location = new Point(13, 66);
-            SwitchCenterSpring.Margin = new Padding(0);
-            SwitchCenterSpring.MouseLocation = new Point(-1, -1);
-            SwitchCenterSpring.MouseState = MaterialSkin.MouseState.HOVER;
-            SwitchCenterSpring.Name = "SwitchCenterSpring";
-            SwitchCenterSpring.Ripple = true;
-            SwitchCenterSpring.Size = new Size(168, 37);
-            SwitchCenterSpring.TabIndex = 0;
-            SwitchCenterSpring.Text = "Centered spring";
-            SwitchCenterSpring.UseVisualStyleBackColor = false;
-            SwitchCenterSpring.CheckedChanged += SwitchCenterSpring_CheckedChanged;
             // 
             // tabPageDevices
             // 
@@ -588,6 +658,14 @@
             materialCard1.PerformLayout();
             tabPageEffects.ResumeLayout(false);
             tabPageEffects.PerformLayout();
+            flowLayoutPanel1.ResumeLayout(false);
+            flowLayoutPanel1.PerformLayout();
+            panel2.ResumeLayout(false);
+            panel2.PerformLayout();
+            panel3.ResumeLayout(false);
+            panel3.PerformLayout();
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
             tabPageDevices.ResumeLayout(false);
             tabPageDevices.PerformLayout();
             ResumeLayout(false);
@@ -627,5 +705,10 @@
         private MaterialSkin.Controls.MaterialSwitch GearVibratesSwitch;
         private MaterialSkin.Controls.MaterialLabel FlightStatusLabel;
         private MaterialSkin.Controls.MaterialSwitch GroundVibrationSwitch;
+        private MaterialSkin.Controls.MaterialFloatingActionButton buttonConnectJoystick;
+        private FlowLayoutPanel flowLayoutPanel1;
+        private Panel panel1;
+        private Panel panel2;
+        private Panel panel3;
     }
 }
