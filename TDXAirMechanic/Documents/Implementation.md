@@ -192,30 +192,43 @@ All classes implement: `AttachDevice`, `DetachDevice`, `ApplyProfile`, `Update`,
 - Effects refactor implemented:
   - Introduced `Services/Effects` with `SpringEffect`, `StickShakerEffect`, `GearVibrationEffect`, `GroundVibrationEffect`.
   - `EffectsService` now orchestrates these classes and delegates `NudgeTrim` to `SpringEffect`.
+- Helicopter cyclic behavior implemented:
+  - `cyclicSwitch` enables cyclic mode (mutually exclusive with `SwitchCenterSpring`). When cyclic is enabled, `SwitchCenterSpring` remains visible but is forced off; dynamic spring UI is hidden.
+  - `cyclicSettingsPanel` visibility mirrors `cyclicSwitch`. It is hidden when cyclic is disabled.
+  - Separate spring and damper effects per USB PID:
+    - `CyclicEffect` creates two condition effects: a spring (`GUID_Spring`) and a damper (`GUID_Damper`).
+    - UI sliders map 0–100 to 0–10000 coefficients:
+      - `cyclicSpringSlider` ? spring coefficient via `EffectsService.SetCyclicSpringPercent`.
+      - `dampingSlider` ? damper coefficient via `EffectsService.SetCyclicDampingPercent`.
+  - Trim reset/disconnect integration:
+    - Trim reset button now resets cyclic center to 0,0 (`CyclicEffect.ResetCenter`) when cyclic is active; otherwise resets `SpringEffect` trim offsets.
+    - Trim disconnect button disables the active spring while held. On release, the center is set to the current joystick position and the spring is re-enabled:
+      - In cyclic mode, `EffectsService.SetTrimCenterFromCurrentStick` calls `CyclicEffect.SetCenterFromRaw(x,y)`.
+      - In centered spring mode, it calls `SpringEffect.SetTrimCenterRaw(x,y)`.
+- Effects orchestration updates:
+  - `EffectsService.SetSpringEnabled(bool)` now respects cyclic mode and routes enable/disable to `CyclicEffect` when active, preventing accidental creation of a third spring effect.
+  - `CyclicEffect` guards creation/updates with an internal `_enabled` flag.
 
-## Current Limitations / TODOs
+## UI Behavior
 
-- Axis discovery assumes Usage 48/49 for fallback; needs broader validation.
-- Effect parameterization is static; expose tuning via profile settings (e.g., min/max spring coefficients, non-linear response curve).
-- Profile changes do not yet adjust shaker frequency beyond enable/disable.
-- Consider exposing trim units in degrees and calibrating device units per-axis per-device.
-- Add UI affordances to reset trim to center and to adjust `TrimStep`/`MaxTrimOffset` per profile.
+- `SwitchCenterSpring` and `cyclicSwitch` are mutually exclusive:
+  - Turning on `SwitchCenterSpring` turns off `cyclicSwitch`.
+  - Turning on `cyclicSwitch` forces `SwitchCenterSpring` off and hides `switchDynamicSpring`.
+- `cyclicSettingsPanel` is hidden when `cyclicSwitch` is off.
+- Trim controls show only when `SwitchCenterSpring` is visible and checked.
 
-## Disposal and Resource Management
+## Technical Notes
 
-- Ensures:
-  - `_cts.Cancel()` and wait on `_mechanicTask`.
-  - `Unacquire()` on active joystick before disposal.
-  - Resets and disposes effects via `IEffectsService`.
-  - Disposes `_cts`, `_directInput`, and `_mechanicTask`.
-- Idempotent `Dispose(bool)` via `_disposed` guard.
+- Joystick axis mapping for trim/center:
+  - DirectInput axes (typically 0..65535, ~32767 center) are normalized to [-1,1] around center and scaled to `MaxTrimOffset` (default 4000) before applying to `Condition.Offset`.
+  - `SpringEffect.SetTrimCenterRaw` and `CyclicEffect.SetCenterFromRaw` perform this mapping.
+- Cyclic condition effects:
+  - `CyclicEffect` discovers condition effect GUIDs via `Joystick.GetEffects(EffectType.Condition)` and matches by name (e.g., "Spring"/"Damper").
+  - Spring `Condition.Offset` reflects current cyclic center; damper uses coefficients only.
 
-## Next Steps
+## TODO / Future Work
 
-- Display the force on the 2 joystick axes in the dashboard
-- Expose dynamic spring tuning parameters in profiles:
-  - Configure min/max stiffness and update threshold.
-  - Optionally support non-linear curves (e.g., quadratic or piecewise) and separate per-axis gains.
-- Expose trim parameters in profiles:
-  - `TrimStep` and `MaxTrimOffset` adjustments via UI.
-  - Add "Reset Trim" button to re-center offsets.
+- Device calibration for axis center/range via `Joystick.Properties`.
+- Expose `MaxTrimOffset` and mapping tuning in UI.
+- Add dashboard visualization for axis forces.
+- Broader axis discovery beyond usages 48/49.

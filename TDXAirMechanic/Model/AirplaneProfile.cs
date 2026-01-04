@@ -17,6 +17,12 @@ namespace TDXAirMechanic.Model
         public bool GearVibration { get; set; } // Vibrate stick when landing gear is lowered
         public bool GroundVibration { get; set; } // Ground roll vibrations when on ground
 
+        // Helicopter cyclic behavior (mutually exclusive with CenteredSpring)
+        public bool CyclicEnabled { get; set; } = false;
+        // 0..100 UI values mapped to coefficients
+        public int CyclicDamping { get; set; } = 0;   // maps to damper coefficient
+        public int CyclicSpring { get; set; } = 0;    // maps to spring coefficient
+
         // Trim enable state (UI `TrimSwitch`); trim acts only if CenteredSpring is also enabled.
         public bool TrimEnabled { get; set; } = true;
 
@@ -26,6 +32,10 @@ namespace TDXAirMechanic.Model
         public int PitchTrimDownButton { get; set; } = -1;
         public int RollTrimLeftButton { get; set; } = -1;
         public int RollTrimRightButton { get; set; } = -1;
+
+        // Additional buttons for cyclic UX
+        public int TrimResetButton { get; set; } = -1;       // re-center trim offsets
+        public int TrimDisconnectButton { get; set; } = -1;  // temporarily disable spring while held
 
         // Trim step in device units (Effect Condition Offset). Small increments per press.
         // Typical DirectInput range is device-dependent; start conservatively.

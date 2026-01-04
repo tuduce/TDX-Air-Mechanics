@@ -17,6 +17,7 @@ namespace TDXAirMechanic.Services.Effects
         private int _lastSpringCoeff = -1;
         private int _trimOffsetX = 0;
         private int _trimOffsetY = 0;
+        private bool _enabled = true;
 
         private Joystick? GetJoystickSafe()
         {
@@ -37,7 +38,7 @@ namespace TDXAirMechanic.Services.Effects
         {
             _joystick = joystick;
             // reapply profile
-            if (_profile?.CenteredSpring == true)
+            if (_profile?.CenteredSpring == true && _enabled)
                 EnsureSpringEffect();
         }
 
@@ -50,7 +51,7 @@ namespace TDXAirMechanic.Services.Effects
         public void ApplyProfile(AirplaneProfile? profile)
         {
             _profile = profile;
-            if (_profile?.CenteredSpring == true)
+            if (_profile?.CenteredSpring == true && _enabled)
                 EnsureSpringEffect();
             else
                 RemoveSpringEffect();
@@ -61,10 +62,10 @@ namespace TDXAirMechanic.Services.Effects
             var js = GetJoystickSafe();
             if (js == null || _profile == null) return;
 
-            if (_profile.CenteredSpring)
+            if (_profile.CenteredSpring && _enabled)
                 EnsureSpringEffect();
 
-            if (_profile.CenteredSpring && _profile.DynamicSpring)
+            if (_profile.CenteredSpring && _profile.DynamicSpring && _enabled)
                 UpdateDynamicSpring(data);
         }
 
@@ -103,6 +104,31 @@ namespace TDXAirMechanic.Services.Effects
             catch (Exception ex)
             {
                 Debug.WriteLine(ex + "[SpringEffect] Failed to apply trim nudge");
+            }
+        }
+
+        // New: reset trim offsets to center
+        public void ResetTrimOffsets()
+        {
+            _trimOffsetX = 0;
+            _trimOffsetY = 0;
+            ApplySpringOffsets();
+        }
+
+        // New: temporarily enable/disable spring without losing current trim
+        public void SetEnabled(bool enabled)
+        {
+            _enabled = enabled;
+            if (!_enabled)
+            {
+                // Stop effect but keep offsets in memory
+                try { _springEffect?.Stop(); } catch { }
+            }
+            else
+            {
+                // Recreate/start effect with current offsets
+                EnsureSpringEffect();
+                ApplySpringOffsets();
             }
         }
 
@@ -237,19 +263,6 @@ namespace TDXAirMechanic.Services.Effects
 
                 int coeff = (int)(maxCoeff / (1 + Math.Pow(Math.E, (-1 * (5 / barber) * (ias - (barber / 2))))));
 
-                // TODO: remove this code if spring dynamic OK
-                //double factor = 0;
-                //const int minCoeff = 1000;
-                //ias = Math.Max(0, data.IAS);
-                //barber = data.Barber;
-                //factor = 0;
-                //if (barber > 0)
-                //    factor = Math.Clamp(ias / barber, 0.0, 1.0);
-                //else
-                //    factor = Math.Clamp(ias / 250.0, 0.0, 1.0);
-                //
-                //int coeff = (int)Math.Round(minCoeff + factor * (maxCoeff - minCoeff));
-
                 if (Math.Abs(coeff - _lastSpringCoeff) < 100)
                 {
                     ApplySpringOffsets();
@@ -331,12 +344,34 @@ namespace TDXAirMechanic.Services.Effects
             _springAxes = null;
             _springAxisUsages = null;
             _lastSpringCoeff = -1;
-            _trimOffsetX = 0;
-            _trimOffsetY = 0;
+            // keep trim values; they get applied on next Ensure
         }
 
         // Expose trim to service
         public int TrimOffsetX => _trimOffsetX;
         public int TrimOffsetY => _trimOffsetY;
+
+        // Set trim center based on raw device X/Y positions
+        public void SetTrimCenterRaw(int rawX, int rawY)
+        {
+            if (_profile?.CenteredSpring != true) return;
+            try
+            {
+                // DirectInput usually returns 0..65535. Map to condition offset range roughly -10000..+10000 centered at mid.
+                int center = 32767; // approximate mid
+                int range = 32767;  // normalize to [-1,1]
+                double nx = Math.Clamp((rawX - center) / (double)range, -1.0, 1.0);
+                double ny = Math.Clamp((rawY - center) / (double)range, -1.0, 1.0);
+
+                int max = Math.Max(0, _profile?.MaxTrimOffset ?? 4000);
+                _trimOffsetX = Math.Clamp((int)(nx * max), -max, max);
+                _trimOffsetY = Math.Clamp((int)(ny * max), -max, max);
+                ApplySpringOffsets();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex + "[SpringEffect] Failed to set trim center from raw stick");
+            }
+        }
     }
 }

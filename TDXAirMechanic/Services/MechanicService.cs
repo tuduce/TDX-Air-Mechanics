@@ -44,6 +44,9 @@ namespace TDXAirMechanic.Services
         // Flight loaded state gates whether effects are active
         private volatile bool _effectsEnabled = false;
 
+        // Track trim disconnect state
+        private bool _springDisconnectedHeld = false;
+
         public MechanicService(IEffectsService effects)
         {
             _directInput = new();
@@ -294,8 +297,48 @@ namespace TDXAirMechanic.Services
                     }
                 }
 
-                // Trim buttons only when enabled
-                if (!profile.TrimEnabled) return;
+                // Trim reset: immediate on rising edge
+                if (profile.TrimResetButton >= 0 && profile.TrimResetButton < buttons.Length)
+                {
+                    int idx = profile.TrimResetButton;
+                    bool down = buttons[idx];
+                    if (down)
+                    {
+                        if (!_pressedTrimButtons.ContainsKey(idx))
+                        {
+                            _pressedTrimButtons[idx] = Environment.TickCount64;
+                            _effects.ResetTrim();
+                        }
+                    }
+                    else
+                    {
+                        if (_pressedTrimButtons.ContainsKey(idx))
+                            _pressedTrimButtons.Remove(idx);
+                    }
+                }
+
+                // Trim disconnect: disable spring while held; on release set center to current stick position then re-enable
+                if (profile.TrimDisconnectButton >= 0 && profile.TrimDisconnectButton < buttons.Length)
+                {
+                    int idx = profile.TrimDisconnectButton;
+                    bool down = buttons[idx];
+                    if (down && !_springDisconnectedHeld)
+                    {
+                        _springDisconnectedHeld = true;
+                        _effects.SetSpringEnabled(false);
+                    }
+                    else if (!down && _springDisconnectedHeld)
+                    {
+                        _springDisconnectedHeld = false;
+                        // Set center based on current stick position
+                        _effects.SetTrimCenterFromCurrentStick(js);
+                        // Re-enable spring with new center
+                        _effects.SetSpringEnabled(true);
+                    }
+                }
+
+                // Trim buttons only when enabled and centered spring active
+                if (!profile.TrimEnabled || !profile.CenteredSpring) return;
 
                 int trimStep = profile.TrimStep;
                 long now = Environment.TickCount64;

@@ -23,5 +23,18 @@ namespace TDXAirMechanic.Services
         // Trim controls
         // Adjust spring center offset by specified deltas for pitch (Y) and roll (X)
         void NudgeTrim(int pitchDelta, int rollDelta);
+
+        // New: reset trim offsets to center
+        void ResetTrim();
+
+        // New: temporarily enable/disable spring effect (used for trim disconnect / cyclic)
+        void SetSpringEnabled(bool enabled);
+
+        // Cyclic parameter setters (0..100 UI values)
+        void SetCyclicSpringPercent(int percent);
+        void SetCyclicDampingPercent(int percent);
+
+        // New: set trim center to current stick position
+        void SetTrimCenterFromCurrentStick(Joystick joystick);
     }
 }

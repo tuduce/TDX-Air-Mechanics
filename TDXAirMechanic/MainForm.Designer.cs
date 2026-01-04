@@ -47,7 +47,7 @@
             switchDynamicSpring = new MaterialSkin.Controls.MaterialSwitch();
             panel3 = new Panel();
             TrimSwitch = new MaterialSkin.Controls.MaterialSwitch();
-            panel1 = new Panel();
+            trimPanel = new Panel();
             JoyBtnExplainLabel = new MaterialSkin.Controls.MaterialLabel();
             PitchUpLabel = new MaterialSkin.Controls.MaterialLabel();
             PitchUpTextBox = new MaterialSkin.Controls.MaterialTextBox();
@@ -67,6 +67,14 @@
             buttonRefresh = new MaterialSkin.Controls.MaterialButton();
             comboBoxJoysticks = new MaterialSkin.Controls.MaterialComboBox();
             tabPageSettings = new TabPage();
+            cyclicSwitch = new MaterialSkin.Controls.MaterialSwitch();
+            cyclicSettingsPanel = new Panel();
+            dampingSlider = new MaterialSkin.Controls.MaterialSlider();
+            cyclicSpringSlider = new MaterialSkin.Controls.MaterialSlider();
+            trimDisconnectLabel = new MaterialSkin.Controls.MaterialLabel();
+            trimDisconnectTextBox = new MaterialSkin.Controls.MaterialTextBox();
+            trimResetLabel = new MaterialSkin.Controls.MaterialLabel();
+            trimResetTextBox = new MaterialSkin.Controls.MaterialTextBox();
             materialTabControl1.SuspendLayout();
             tabPageDashboard.SuspendLayout();
             materialCard2.SuspendLayout();
@@ -75,8 +83,9 @@
             flowLayoutPanel1.SuspendLayout();
             panel2.SuspendLayout();
             panel3.SuspendLayout();
-            panel1.SuspendLayout();
+            trimPanel.SuspendLayout();
             tabPageDevices.SuspendLayout();
+            cyclicSettingsPanel.SuspendLayout();
             SuspendLayout();
             // 
             // materialTabControl1
@@ -124,6 +133,7 @@
             buttonConnectJoystick.Size = new Size(56, 56);
             buttonConnectJoystick.TabIndex = 3;
             buttonConnectJoystick.UseVisualStyleBackColor = true;
+            buttonConnectJoystick.Click += buttonConnectJoystick_Click;
             // 
             // imageListIcons
             // 
@@ -238,14 +248,16 @@
             flowLayoutPanel1.Controls.Add(SwitchCenterSpring);
             flowLayoutPanel1.Controls.Add(panel2);
             flowLayoutPanel1.Controls.Add(panel3);
-            flowLayoutPanel1.Controls.Add(panel1);
+            flowLayoutPanel1.Controls.Add(trimPanel);
             flowLayoutPanel1.Controls.Add(switchStickShaker);
             flowLayoutPanel1.Controls.Add(GearVibratesSwitch);
             flowLayoutPanel1.Controls.Add(GroundVibrationSwitch);
+            flowLayoutPanel1.Controls.Add(cyclicSwitch);
+            flowLayoutPanel1.Controls.Add(cyclicSettingsPanel);
             flowLayoutPanel1.FlowDirection = FlowDirection.TopDown;
             flowLayoutPanel1.Location = new Point(6, 61);
             flowLayoutPanel1.Name = "flowLayoutPanel1";
-            flowLayoutPanel1.Size = new Size(597, 326);
+            flowLayoutPanel1.Size = new Size(597, 529);
             flowLayoutPanel1.TabIndex = 15;
             // 
             // SwitchCenterSpring
@@ -322,24 +334,24 @@
             TrimSwitch.Text = "Dynamic Trim";
             TrimSwitch.UseVisualStyleBackColor = true;
             // 
-            // panel1
+            // trimPanel
             // 
-            panel1.AutoSize = true;
-            panel1.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            panel1.Controls.Add(JoyBtnExplainLabel);
-            panel1.Controls.Add(PitchUpLabel);
-            panel1.Controls.Add(PitchUpTextBox);
-            panel1.Controls.Add(PitchDownLabel);
-            panel1.Controls.Add(PitchDownTextBox);
-            panel1.Controls.Add(RollRightTextBox);
-            panel1.Controls.Add(RollLeftLabel);
-            panel1.Controls.Add(RollRightLabel);
-            panel1.Controls.Add(RollLeftTextBox);
-            panel1.Location = new Point(120, 111);
-            panel1.Margin = new Padding(120, 0, 3, 0);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(474, 104);
-            panel1.TabIndex = 4;
+            trimPanel.AutoSize = true;
+            trimPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            trimPanel.Controls.Add(JoyBtnExplainLabel);
+            trimPanel.Controls.Add(PitchUpLabel);
+            trimPanel.Controls.Add(PitchUpTextBox);
+            trimPanel.Controls.Add(PitchDownLabel);
+            trimPanel.Controls.Add(PitchDownTextBox);
+            trimPanel.Controls.Add(RollRightTextBox);
+            trimPanel.Controls.Add(RollLeftLabel);
+            trimPanel.Controls.Add(RollRightLabel);
+            trimPanel.Controls.Add(RollLeftTextBox);
+            trimPanel.Location = new Point(120, 111);
+            trimPanel.Margin = new Padding(120, 0, 3, 0);
+            trimPanel.Name = "trimPanel";
+            trimPanel.Size = new Size(474, 104);
+            trimPanel.TabIndex = 4;
             // 
             // JoyBtnExplainLabel
             // 
@@ -635,6 +647,118 @@
             tabPageSettings.Text = "Settings";
             tabPageSettings.UseVisualStyleBackColor = true;
             // 
+            // cyclicSwitch
+            // 
+            cyclicSwitch.AutoSize = true;
+            cyclicSwitch.Depth = 0;
+            cyclicSwitch.Location = new Point(0, 326);
+            cyclicSwitch.Margin = new Padding(0);
+            cyclicSwitch.MouseLocation = new Point(-1, -1);
+            cyclicSwitch.MouseState = MaterialSkin.MouseState.HOVER;
+            cyclicSwitch.Name = "cyclicSwitch";
+            cyclicSwitch.Ripple = true;
+            cyclicSwitch.Size = new Size(176, 37);
+            cyclicSwitch.TabIndex = 17;
+            cyclicSwitch.Text = "Springless cyclic";
+            cyclicSwitch.UseVisualStyleBackColor = true;
+            // 
+            // cyclicSettingsPanel
+            // 
+            cyclicSettingsPanel.AutoSize = true;
+            cyclicSettingsPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            cyclicSettingsPanel.Controls.Add(trimResetTextBox);
+            cyclicSettingsPanel.Controls.Add(trimResetLabel);
+            cyclicSettingsPanel.Controls.Add(trimDisconnectTextBox);
+            cyclicSettingsPanel.Controls.Add(trimDisconnectLabel);
+            cyclicSettingsPanel.Controls.Add(cyclicSpringSlider);
+            cyclicSettingsPanel.Controls.Add(dampingSlider);
+            cyclicSettingsPanel.Location = new Point(65, 363);
+            cyclicSettingsPanel.Margin = new Padding(65, 0, 0, 0);
+            cyclicSettingsPanel.Name = "cyclicSettingsPanel";
+            cyclicSettingsPanel.Size = new Size(518, 166);
+            cyclicSettingsPanel.TabIndex = 18;
+            // 
+            // dampingSlider
+            // 
+            dampingSlider.Depth = 0;
+            dampingSlider.ForeColor = Color.FromArgb(222, 0, 0, 0);
+            dampingSlider.Location = new Point(3, 3);
+            dampingSlider.MouseState = MaterialSkin.MouseState.HOVER;
+            dampingSlider.Name = "dampingSlider";
+            dampingSlider.Size = new Size(512, 40);
+            dampingSlider.TabIndex = 1;
+            dampingSlider.Text = "Damping";
+            dampingSlider.Value = 100;
+            // 
+            // cyclicSpringSlider
+            // 
+            cyclicSpringSlider.Depth = 0;
+            cyclicSpringSlider.ForeColor = Color.FromArgb(222, 0, 0, 0);
+            cyclicSpringSlider.Location = new Point(0, 38);
+            cyclicSpringSlider.MouseState = MaterialSkin.MouseState.HOVER;
+            cyclicSpringSlider.Name = "cyclicSpringSlider";
+            cyclicSpringSlider.Size = new Size(512, 40);
+            cyclicSpringSlider.TabIndex = 2;
+            cyclicSpringSlider.Text = "Spring     ";
+            // 
+            // trimDisconnectLabel
+            // 
+            trimDisconnectLabel.AutoSize = true;
+            trimDisconnectLabel.Depth = 0;
+            trimDisconnectLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            trimDisconnectLabel.Location = new Point(0, 81);
+            trimDisconnectLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            trimDisconnectLabel.Name = "trimDisconnectLabel";
+            trimDisconnectLabel.Size = new Size(115, 19);
+            trimDisconnectLabel.TabIndex = 3;
+            trimDisconnectLabel.Text = "Trim disconnect";
+            // 
+            // trimDisconnectTextBox
+            // 
+            trimDisconnectTextBox.AnimateReadOnly = false;
+            trimDisconnectTextBox.BorderStyle = BorderStyle.None;
+            trimDisconnectTextBox.Depth = 0;
+            trimDisconnectTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
+            trimDisconnectTextBox.LeadingIcon = null;
+            trimDisconnectTextBox.Location = new Point(3, 113);
+            trimDisconnectTextBox.MaxLength = 50;
+            trimDisconnectTextBox.MouseState = MaterialSkin.MouseState.OUT;
+            trimDisconnectTextBox.Multiline = false;
+            trimDisconnectTextBox.Name = "trimDisconnectTextBox";
+            trimDisconnectTextBox.Size = new Size(100, 50);
+            trimDisconnectTextBox.TabIndex = 4;
+            trimDisconnectTextBox.Text = "";
+            trimDisconnectTextBox.TrailingIcon = null;
+            // 
+            // trimResetLabel
+            // 
+            trimResetLabel.AutoSize = true;
+            trimResetLabel.Depth = 0;
+            trimResetLabel.Font = new Font("Roboto", 14F, FontStyle.Regular, GraphicsUnit.Pixel);
+            trimResetLabel.Location = new Point(136, 81);
+            trimResetLabel.MouseState = MaterialSkin.MouseState.HOVER;
+            trimResetLabel.Name = "trimResetLabel";
+            trimResetLabel.Size = new Size(72, 19);
+            trimResetLabel.TabIndex = 5;
+            trimResetLabel.Text = "Trim reset";
+            // 
+            // trimResetTextBox
+            // 
+            trimResetTextBox.AnimateReadOnly = false;
+            trimResetTextBox.BorderStyle = BorderStyle.None;
+            trimResetTextBox.Depth = 0;
+            trimResetTextBox.Font = new Font("Roboto", 16F, FontStyle.Regular, GraphicsUnit.Pixel);
+            trimResetTextBox.LeadingIcon = null;
+            trimResetTextBox.Location = new Point(136, 113);
+            trimResetTextBox.MaxLength = 50;
+            trimResetTextBox.MouseState = MaterialSkin.MouseState.OUT;
+            trimResetTextBox.Multiline = false;
+            trimResetTextBox.Name = "trimResetTextBox";
+            trimResetTextBox.Size = new Size(100, 50);
+            trimResetTextBox.TabIndex = 6;
+            trimResetTextBox.Text = "";
+            trimResetTextBox.TrailingIcon = null;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -664,10 +788,12 @@
             panel2.PerformLayout();
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
-            panel1.ResumeLayout(false);
-            panel1.PerformLayout();
+            trimPanel.ResumeLayout(false);
+            trimPanel.PerformLayout();
             tabPageDevices.ResumeLayout(false);
             tabPageDevices.PerformLayout();
+            cyclicSettingsPanel.ResumeLayout(false);
+            cyclicSettingsPanel.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -707,8 +833,16 @@
         private MaterialSkin.Controls.MaterialSwitch GroundVibrationSwitch;
         private MaterialSkin.Controls.MaterialFloatingActionButton buttonConnectJoystick;
         private FlowLayoutPanel flowLayoutPanel1;
-        private Panel panel1;
+        private Panel trimPanel;
         private Panel panel2;
         private Panel panel3;
+        private MaterialSkin.Controls.MaterialSwitch cyclicSwitch;
+        private Panel cyclicSettingsPanel;
+        private MaterialSkin.Controls.MaterialSlider dampingSlider;
+        private MaterialSkin.Controls.MaterialSlider cyclicSpringSlider;
+        private MaterialSkin.Controls.MaterialLabel trimResetLabel;
+        private MaterialSkin.Controls.MaterialTextBox trimDisconnectTextBox;
+        private MaterialSkin.Controls.MaterialLabel trimDisconnectLabel;
+        private MaterialSkin.Controls.MaterialTextBox trimResetTextBox;
     }
 }

@@ -154,21 +154,37 @@ namespace TDXAirMechanic
             _applyingProfile = true;
             try
             {
-                SwitchCenterSpring.Checked = profile.CenteredSpring;
-                switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
-                switchDynamicSpring.Checked = profile.DynamicSpring && SwitchCenterSpring.Checked;
-                switchStickShaker.Checked = profile.StickShaker;
-                GearVibratesSwitch.Checked = profile.GearVibration;
-                GroundVibrationSwitch.Checked = profile.GroundVibration;
+                // Center spring should remain visible; turn off when cyclic enabled
+                SwitchCenterSpring.Visible = true;
+                SwitchCenterSpring.Checked = profile.CenteredSpring && !profile.CyclicEnabled;
+
+                // Dynamic spring visibility follows center spring checked and not cyclic
+                switchDynamicSpring.Visible = SwitchCenterSpring.Checked && !profile.CyclicEnabled;
+                switchDynamicSpring.Checked = profile.DynamicSpring && SwitchCenterSpring.Checked && !profile.CyclicEnabled;
+
+                // Cyclic
+                if (cyclicSwitch != null)
+                    cyclicSwitch.Checked = profile.CyclicEnabled;
+                if (cyclicSettingsPanel != null)
+                    cyclicSettingsPanel.Visible = profile.CyclicEnabled;
+                if (dampingSlider != null)
+                    dampingSlider.Value = Math.Clamp(profile.CyclicDamping, 0, 100);
+                if (cyclicSpringSlider != null)
+                    cyclicSpringSlider.Value = Math.Clamp(profile.CyclicSpring, 0, 100);
 
                 // Trim
-                TrimSwitch.Checked = profile.TrimEnabled;
+                TrimSwitch.Checked = profile.TrimEnabled && !profile.CyclicEnabled;
                 PitchUpTextBox.Text = profile.PitchTrimUpButton >= 0 ? profile.PitchTrimUpButton.ToString() : string.Empty;
                 PitchDownTextBox.Text = profile.PitchTrimDownButton >= 0 ? profile.PitchTrimDownButton.ToString() : string.Empty;
                 RollLeftTextBox.Text = profile.RollTrimLeftButton >= 0 ? profile.RollTrimLeftButton.ToString() : string.Empty;
                 RollRightTextBox.Text = profile.RollTrimRightButton >= 0 ? profile.RollTrimRightButton.ToString() : string.Empty;
 
-                // Trim controls visibility follows centered spring
+                // Cyclic extra buttons
+                if (trimResetTextBox != null)
+                    trimResetTextBox.Text = profile.TrimResetButton >= 0 ? profile.TrimResetButton.ToString() : string.Empty;
+                if (trimDisconnectTextBox != null)
+                    trimDisconnectTextBox.Text = profile.TrimDisconnectButton >= 0 ? profile.TrimDisconnectButton.ToString() : string.Empty;
+
                 UpdateTrimControlsVisibility();
             }
             finally
@@ -179,7 +195,7 @@ namespace TDXAirMechanic
 
         private void UpdateTrimControlsVisibility()
         {
-            bool visible = SwitchCenterSpring.Checked;
+            bool visible = SwitchCenterSpring.Checked && SwitchCenterSpring.Visible;
             TrimSwitch.Visible = visible;
             JoyBtnExplainLabel.Visible = visible;
             PitchUpLabel.Visible = visible;
@@ -206,23 +222,52 @@ namespace TDXAirMechanic
 
             _currentProfile ??= new AirplaneProfile { Model = _currentModel };
 
-            _currentProfile.CenteredSpring = SwitchCenterSpring.Checked;
-            _currentProfile.DynamicSpring = SwitchCenterSpring.Checked && switchDynamicSpring.Checked; // only valid when centered
+            // Cyclic takes precedence
+            bool cyclic = cyclicSwitch != null && cyclicSwitch.Checked;
+            _currentProfile.CyclicEnabled = cyclic;
+
+            _currentProfile.CenteredSpring = !cyclic && SwitchCenterSpring.Checked;
+            _currentProfile.DynamicSpring = _currentProfile.CenteredSpring && switchDynamicSpring.Checked; // only valid when centered
             _currentProfile.StickShaker = switchStickShaker.Checked;
             _currentProfile.GearVibration = GearVibratesSwitch.Checked;
             _currentProfile.GroundVibration = GroundVibrationSwitch.Checked;
 
-            // Trim
-            _currentProfile.TrimEnabled = TrimSwitch.Checked;
+            // Cyclic params
+            if (dampingSlider != null)
+                _currentProfile.CyclicDamping = dampingSlider.Value;
+            if (cyclicSpringSlider != null)
+                _currentProfile.CyclicSpring = cyclicSpringSlider.Value;
+
+            // Trim (disabled when cyclic)
+            _currentProfile.TrimEnabled = !cyclic && TrimSwitch.Checked;
             _currentProfile.PitchTrimUpButton = ParseButtonIndex(PitchUpTextBox);
             _currentProfile.PitchTrimDownButton = ParseButtonIndex(PitchDownTextBox);
             _currentProfile.RollTrimLeftButton = ParseButtonIndex(RollLeftTextBox);
             _currentProfile.RollTrimRightButton = ParseButtonIndex(RollRightTextBox);
 
-            _mechanicServices.SetActiveProfile(_currentProfile);
+            // Cyclic extra buttons
+            if (trimResetTextBox != null)
+                _currentProfile.TrimResetButton = ParseButtonIndex(trimResetTextBox);
+            if (trimDisconnectTextBox != null)
+                _currentProfile.TrimDisconnectButton = ParseButtonIndex(trimDisconnectTextBox);
 
-            // Auto-save on change
+            _mechanicServices.SetActiveProfile(_currentProfile);
             _profileManager.SaveProfile(_currentProfile);
+        }
+
+        private void WireCyclicCaptureHandlers()
+        {
+            // Capture buttons for cyclic reset/disconnect
+            if (trimResetTextBox != null)
+            {
+                trimResetTextBox.GotFocus += (s, e) => BeginJoystickCaptureForTextBox(trimResetTextBox);
+                trimResetTextBox.LostFocus += (s, e) => _mechanicServices.CancelButtonCapture();
+            }
+            if (trimDisconnectTextBox != null)
+            {
+                trimDisconnectTextBox.GotFocus += (s, e) => BeginJoystickCaptureForTextBox(trimDisconnectTextBox);
+                trimDisconnectTextBox.LostFocus += (s, e) => _mechanicServices.CancelButtonCapture();
+            }
         }
 
         private void WireTrimCaptureHandlers()
@@ -244,7 +289,6 @@ namespace TDXAirMechanic
             textBox.Text = string.Empty;
             _mechanicServices.BeginButtonCapture(idx =>
             {
-                // This callback executes on the mechanic background thread.
                 // Marshal back to UI thread to update the textbox and profile.
                 if (textBox.IsHandleCreated)
                 {
@@ -278,10 +322,23 @@ namespace TDXAirMechanic
 
             // Wire capture handlers for trim assignment
             WireTrimCaptureHandlers();
+            WireCyclicCaptureHandlers();
+
+            // Cyclic UI events
+            if (cyclicSwitch != null)
+                cyclicSwitch.CheckedChanged += cyclicSwitch_CheckedChanged;
+            if (dampingSlider != null)
+                dampingSlider.onValueChanged += dampingSlider_ValueChanged;
+            if (cyclicSpringSlider != null)
+                cyclicSpringSlider.onValueChanged += cyclicSpringSlider_ValueChanged;
 
             // Ensure dynamic spring visibility reflects center spring state on startup
             switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
             UpdateTrimControlsVisibility();
+
+            // Ensure cyclic settings panel is hidden if cyclic is disabled on startup
+            if (cyclicSettingsPanel != null && cyclicSwitch != null)
+                cyclicSettingsPanel.Visible = cyclicSwitch.Checked;
 
             // Populate profiles dropdown from disk
             RefreshProfilesDropdown();
@@ -331,6 +388,24 @@ namespace TDXAirMechanic
 
         private void SwitchCenterSpring_CheckedChanged(object sender, EventArgs e)
         {
+            // If centered spring is turned on, cyclic must be off
+            if (SwitchCenterSpring.Checked)
+            {
+                if (cyclicSwitch != null && cyclicSwitch.Checked)
+                {
+                    // Turn off cyclic without re-entering handler loops
+                    _applyingProfile = true;
+                    try
+                    {
+                        cyclicSwitch.Checked = false;
+                    }
+                    finally
+                    {
+                        _applyingProfile = false;
+                    }
+                }
+            }
+
             // Show/hide dynamic spring switch based on center spring state
             switchDynamicSpring.Visible = SwitchCenterSpring.Checked;
             if (!switchDynamicSpring.Visible)
@@ -416,6 +491,45 @@ namespace TDXAirMechanic
             _currentProfile = profile;
             RefreshProfilesDropdown();
             SelectProfileInDropdown(profile.Model);
+        }
+
+        private void buttonConnectJoystick_Click(object sender, EventArgs e)
+        {
+            _mechanicServices.LoadJoysticks();
+        }
+
+        private void cyclicSwitch_CheckedChanged(object? sender, EventArgs e)
+        {
+            if (_applyingProfile) return;
+            if (cyclicSettingsPanel != null)
+                cyclicSettingsPanel.Visible = cyclicSwitch!.Checked;
+
+            // Keep center spring switch visible; turn off when cyclic enabled
+            SwitchCenterSpring.Visible = true;
+            if (cyclicSwitch!.Checked)
+            {
+                SwitchCenterSpring.Checked = false;
+                switchDynamicSpring.Checked = false;
+            }
+            // Dynamic spring visibility follows center spring checked and not cyclic
+            switchDynamicSpring.Visible = SwitchCenterSpring.Checked && !cyclicSwitch!.Checked;
+
+            UpdateTrimControlsVisibility();
+            UpdateCurrentProfileFromUi();
+        }
+
+        private void dampingSlider_ValueChanged(object? sender, int newValue)
+        {
+            if (_applyingProfile) return;
+            // Effects will pick up this change via profile application
+            UpdateCurrentProfileFromUi();
+        }
+
+        private void cyclicSpringSlider_ValueChanged(object? sender, int newValue)
+        {
+            if (_applyingProfile) return;
+            // Effects will pick up this change via profile application
+            UpdateCurrentProfileFromUi();
         }
     }
 }
