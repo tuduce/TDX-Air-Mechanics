@@ -1,6 +1,6 @@
 # TDX Air Mechanics - Architecture and Code Review
 
-**Date:** January 2026  
+**Date:** January 7, 2026  
 **Version:** .NET 9.0, C# 13.0  
 **Reviewer:** Architecture Review  
 
@@ -346,9 +346,8 @@ await Task.WhenAny(waitTask, delayTask);
 var buttonPollTask = Task.Run(async () =>
 {
     using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(20));
-    while (!_cts.IsCancellationRequested)
+    while (await timer.WaitForNextTickAsync(_cts.Token))
     {
-        await timer.WaitForNextTickAsync(_cts.Token);
         PollTrimButtons();
     }
 }, _cts.Token);
@@ -608,9 +607,8 @@ while (!_cts.IsCancellationRequested)
 var buttonPollTask = Task.Run(async () =>
 {
     using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(20));
-    while (!_cts.IsCancellationRequested)
+    while (await timer.WaitForNextTickAsync(_cts.Token))
     {
-        await timer.WaitForNextTickAsync(_cts.Token);
         PollTrimButtons();
     }
 }, _cts.Token);
