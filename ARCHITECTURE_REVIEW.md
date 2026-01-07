@@ -342,21 +342,27 @@ await Task.WhenAny(waitTask, delayTask);
 
 **Improved:**
 ```csharp
-// Use timer for button polling, separate from data processing
-var buttonPollTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(20));
+// Separate button polling task
+var buttonPollTask = Task.Run(async () =>
+{
+    using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(20));
+    while (!_cts.IsCancellationRequested)
+    {
+        await timer.WaitForNextTickAsync(_cts.Token);
+        PollTrimButtons();
+    }
+}, _cts.Token);
 
+// Main data processing loop - no artificial delays
 while (!_cts.IsCancellationRequested)
 {
-    // Process all available data immediately
-    await foreach (var data in reader.ReadAllAsync(_cts.Token))
+    // Wait for data to be available
+    await reader.WaitToReadAsync(_cts.Token);
+    
+    // Drain all available data immediately
+    while (reader.TryRead(out var data))
     {
         ProcessSimData(data);
-        
-        // Check if button poll is due (non-blocking)
-        if (buttonPollTimer.TryWaitAsync(TimeSpan.Zero))
-        {
-            PollTrimButtons();
-        }
     }
 }
 ```
@@ -584,18 +590,30 @@ _logger.LogInformation("Joystick selected: {DeviceName}, FFB: {HasFFB}",
 Thread.Sleep(16);
 
 // 2. Event-driven mechanic loop
-await foreach (var data in _simDataChannel.Reader.ReadAllAsync(_cts.Token))
+while (!_cts.IsCancellationRequested)
 {
-    _perfWatch.Restart();
-    ProcessSimData(data);
-    _perfWatch.Stop();
-    
-    // Track latency
-    LogLatencyIfNeeded();
+    await _simDataChannel.Reader.WaitToReadAsync(_cts.Token);
+    while (_simDataChannel.Reader.TryRead(out var data))
+    {
+        _perfWatch.Restart();
+        ProcessSimData(data);
+        _perfWatch.Stop();
+        
+        // Track latency
+        LogLatencyIfNeeded();
+    }
 }
 
 // 3. Separate trim button polling on independent timer
-var buttonTimer = new Timer(PollTrimButtons, null, 0, 20);
+var buttonPollTask = Task.Run(async () =>
+{
+    using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(20));
+    while (!_cts.IsCancellationRequested)
+    {
+        await timer.WaitForNextTickAsync(_cts.Token);
+        PollTrimButtons();
+    }
+}, _cts.Token);
 
 // 4. Cached effect parameters (no allocations on hot path)
 _cachedParams.Parameters = _cachedConditionSet;
