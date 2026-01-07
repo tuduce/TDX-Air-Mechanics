@@ -305,7 +305,7 @@ while (!token.IsCancellationRequested)
 while (!token.IsCancellationRequested)
 {
     _simConnect?.ReceiveMessage();
-    Thread.Sleep(16);  // ~60Hz, matches typical sim framerate
+    Thread.Sleep(16);  // 16ms = 62.5Hz, matches typical sim framerate
 }
 ```
 
@@ -549,7 +549,7 @@ Debug.WriteLine(ex + "Error in mechanic work");
 // Use ILogger from Microsoft.Extensions.Logging
 _logger.LogError(ex, "Error in mechanic work loop");
 _logger.LogInformation("Joystick selected: {DeviceName}, FFB: {HasFFB}", 
-    name, hasForceFeeback);
+    name, hasForceFeedback);
 ```
 
 **Benefits:**
