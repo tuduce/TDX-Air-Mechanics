@@ -144,7 +144,7 @@ namespace TDXAirMechanic.Services
                     _simConnect?.ReceiveMessage();
 
                     // Small delay to prevent a tight loop from consuming 100% CPU
-                    Thread.Sleep(50);
+                    Thread.Sleep(16);
                 }
             }
             catch (Exception ex)

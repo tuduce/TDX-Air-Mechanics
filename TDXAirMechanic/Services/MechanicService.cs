@@ -1,4 +1,5 @@
-﻿using SharpDX.DirectInput;
+﻿using Microsoft.FlightSimulator.SimConnect;
+using SharpDX.DirectInput;
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Channels;
@@ -224,27 +225,27 @@ namespace TDXAirMechanic.Services
         {
             try
             {
+                // Separate button polling task
+                var buttonPollTask = Task.Run(async () =>
+                {
+                    using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(20));
+                    while (!_cts.IsCancellationRequested)
+                    {
+                        await timer.WaitForNextTickAsync(_cts.Token);
+                        PollTrimButtons();
+                    }
+                }, _cts.Token);
+
                 var reader = _simDataChannel.Reader;
                 while (!_cts.IsCancellationRequested)
                 {
-                    // Drain queued items quickly
-                    while (reader.TryRead(out var queued))
-                    {
-                        ProcessSimData(queued);
-                    }
+                    // Wait for data to be available
+                    await reader.WaitToReadAsync(_cts.Token);
 
-                    // Poll trim buttons ~50Hz even when no sim data is incoming
-                    PollTrimButtons();
-
-                    // Wait either for new sim data or a short delay for next poll
-                    var waitTask = reader.WaitToReadAsync(_cts.Token).AsTask();
-                    var delayTask = Task.Delay(20, _cts.Token);
-                    var completed = await Task.WhenAny(waitTask, delayTask);
-                    if (completed == waitTask && waitTask.Result)
+                    // Drain all available data immediately
+                    while (reader.TryRead(out var data))
                     {
-                        // There's data available; process one to keep loop responsive
-                        if (reader.TryRead(out var next))
-                            ProcessSimData(next);
+                        ProcessSimData(data);
                     }
                 }
             }

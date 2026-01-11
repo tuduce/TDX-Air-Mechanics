@@ -155,7 +155,6 @@ namespace TDXAirMechanic
             try
             {
                 // Center spring should remain visible; turn off when cyclic enabled
-                SwitchCenterSpring.Visible = true;
                 SwitchCenterSpring.Checked = profile.CenteredSpring && !profile.CyclicEnabled;
 
                 // Dynamic spring visibility follows center spring checked and not cyclic
@@ -195,7 +194,7 @@ namespace TDXAirMechanic
 
         private void UpdateTrimControlsVisibility()
         {
-            bool visible = SwitchCenterSpring.Checked && SwitchCenterSpring.Visible;
+            bool visible = SwitchCenterSpring.Checked;
             TrimSwitch.Visible = visible;
             JoyBtnExplainLabel.Visible = visible;
             PitchUpLabel.Visible = visible;
@@ -342,6 +341,12 @@ namespace TDXAirMechanic
 
             // Populate profiles dropdown from disk
             RefreshProfilesDropdown();
+
+            // Explicitly load and apply the default profile when no simulator is connected
+            _currentProfile = _profileManager.LoadProfileForModel(null);
+            ApplyProfileToUi(_currentProfile);
+            _mechanicServices.SetActiveProfile(_currentProfile);
+            SelectProfileInDropdown(_currentProfile.Model);
 
             // Initialize flight status label
             FlightStatusLabel.Text = "No Flight Loaded";
@@ -505,7 +510,6 @@ namespace TDXAirMechanic
                 cyclicSettingsPanel.Visible = cyclicSwitch!.Checked;
 
             // Keep center spring switch visible; turn off when cyclic enabled
-            SwitchCenterSpring.Visible = true;
             if (cyclicSwitch!.Checked)
             {
                 SwitchCenterSpring.Checked = false;
