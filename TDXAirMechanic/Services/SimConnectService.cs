@@ -69,8 +69,12 @@ namespace TDXAirMechanic.Services
             _flightStatusReporter = flightStatusProgress;
             _cts = new CancellationTokenSource();
 
-            // Use Task.Run to start the SimConnect logic on a background thread
-            _simConnectTask = Task.Run(() => ProcessSimConnectMessages(windowHandle, _cts.Token));
+            // Use a LongRunning task to get a dedicated thread for SimConnect processing
+            _simConnectTask = Task.Factory.StartNew(
+                () => SimConnectServiceTaskFunction(windowHandle, _cts.Token),
+                _cts.Token,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default);
 
         }
 
@@ -107,7 +111,7 @@ namespace TDXAirMechanic.Services
             _commandQueue.Enqueue(command);
         }
 
-        private void ProcessSimConnectMessages(IntPtr windowHandle, CancellationToken token)
+        private void SimConnectServiceTaskFunction(IntPtr windowHandle, CancellationToken token)
         {
             try
             { 
@@ -305,12 +309,6 @@ namespace TDXAirMechanic.Services
 
             // Mark that this object has been disposed.
             _disposed = true;
-        }
-
-        // A helper class to create a message-only window for SimConnect
-        private class MessageWindow : NativeWindow, IDisposable
-        {
-            public void Dispose() => DestroyHandle();
         }
     }
 }
