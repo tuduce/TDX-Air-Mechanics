@@ -171,6 +171,11 @@ namespace TDXAirMechanic
                 if (cyclicSpringSlider != null)
                     cyclicSpringSlider.Value = Math.Clamp(profile.CyclicSpring, 0, 100);
 
+                // Stick shaker / gear / ground vibration
+                switchStickShaker.Checked = profile.StickShaker;
+                GearVibratesSwitch.Checked = profile.GearVibration;
+                GroundVibrationSwitch.Checked = profile.GroundVibration;
+
                 // Trim
                 TrimSwitch.Checked = profile.TrimEnabled && !profile.CyclicEnabled;
                 PitchUpTextBox.Text = profile.PitchTrimUpButton >= 0 ? profile.PitchTrimUpButton.ToString() : string.Empty;
