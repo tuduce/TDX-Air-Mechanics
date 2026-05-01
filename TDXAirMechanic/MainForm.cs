@@ -18,8 +18,8 @@ namespace TDXAirMechanic
         private string? _currentModel;
         private bool _applyingProfile;
 
-        // Prevent joystick acquire before the window is foreground
-        private bool _uiReadyForAcquire = false;
+        // Set to true only when the user explicitly clicks "Connect Joystick"
+        private bool _joystickAcquireEnabled = false;
 
         public MainForm(SimConnectService simConnectService, MechanicService mechanicServices, IProfileManager profileManager)
         {
@@ -49,14 +49,6 @@ namespace TDXAirMechanic
 
         private void MainForm_Shown(object? sender, EventArgs e)
         {
-            _uiReadyForAcquire = true;
-            // _mechanicServices.LoadJoysticks();
-
-            // If nothing is selected yet, select the first item now (we are foreground)
-            if (comboBoxJoysticks.Items.Count > 0 && comboBoxJoysticks.SelectedIndex < 0)
-            {
-                comboBoxJoysticks.SelectedIndex = 0;
-            }
         }
 
         private void MechanicProgressReporter(MechanicProgress data)
@@ -72,6 +64,9 @@ namespace TDXAirMechanic
                     comboBoxJoysticks.DataSource = null;
                     comboBoxJoysticks.DataSource = data.Joysticks;
                     comboBoxJoysticks.SelectedIndex = 0;
+                    var firstName = comboBoxJoysticks.SelectedItem as string;
+                    labelJoystickStatus.Text = firstName ?? string.Empty;
+                    textJoystickInfo.Text = _mechanicServices.GetJoystickInfo(firstName);
                     break;
                 case MechanicProgressCommand.SetFlightStatus:
                     FlightStatusLabel.Text = data.Status;
@@ -344,6 +339,9 @@ namespace TDXAirMechanic
             if (cyclicSettingsPanel != null && cyclicSwitch != null)
                 cyclicSettingsPanel.Visible = cyclicSwitch.Checked;
 
+            // Populate joystick list on startup (no acquisition yet)
+            _mechanicServices.LoadJoysticks();
+
             // Populate profiles dropdown from disk
             RefreshProfilesDropdown();
 
@@ -452,13 +450,14 @@ namespace TDXAirMechanic
 
         private void comboBoxJoysticks_SelectedIndexChanged(object? sender, EventArgs e)
         {
-            if (!_uiReadyForAcquire) return;
-
             var name = comboBoxJoysticks.SelectedItem as string;
+            labelJoystickStatus.Text = name ?? string.Empty;
+            textJoystickInfo.Text = _mechanicServices.GetJoystickInfo(name);
+
+            if (!_joystickAcquireEnabled) return;
             if (string.IsNullOrWhiteSpace(name)) return;
 
             var info = _mechanicServices.SelectJoystick(name, this.Handle);
-            labelJoystickStatus.Text = name;
             textJoystickInfo.Text = info;
         }
 
@@ -505,7 +504,14 @@ namespace TDXAirMechanic
 
         private void buttonConnectJoystick_Click(object sender, EventArgs e)
         {
-            _mechanicServices.LoadJoysticks();
+            _joystickAcquireEnabled = true;
+
+            var name = comboBoxJoysticks.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var info = _mechanicServices.SelectJoystick(name, this.Handle);
+            labelJoystickStatus.Text = name;
+            textJoystickInfo.Text = info;
         }
 
         private void cyclicSwitch_CheckedChanged(object? sender, EventArgs e)

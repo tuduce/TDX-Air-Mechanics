@@ -141,6 +141,45 @@ namespace TDXAirMechanic.Services
             }
         }
 
+        public string GetJoystickInfo(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+            var device = _joysticks?.FirstOrDefault(j => string.Equals(j.InstanceName, name, StringComparison.Ordinal));
+            if (device == null) return string.Empty;
+
+            var sb = new StringBuilder();
+            try
+            {
+                using var joystick = new Joystick(_directInput, device.InstanceGuid);
+                sb.AppendLine($"Name: {device.InstanceName}");
+                sb.AppendLine($"Product: {device.ProductName}");
+                sb.AppendLine($"GUID: {device.InstanceGuid}");
+                try
+                {
+                    var caps = joystick.Capabilities;
+                    sb.AppendLine($"Axes: {caps.AxeCount}, Buttons: {caps.ButtonCount}, POVs: {caps.PovCount}");
+                    sb.AppendLine($"FFB: {(caps.Flags.HasFlag(DeviceFlags.ForceFeedback) ? "Yes" : "No")}");
+                }
+                catch { }
+                try
+                {
+                    var effects = joystick.GetEffects().Select(e => CleanEffectName(e.Name)).Distinct().ToList();
+                    if (effects.Count > 0)
+                    {
+                        sb.AppendLine("Effects:");
+                        foreach (var eff in effects)
+                            sb.AppendLine(" - " + eff);
+                    }
+                }
+                catch { }
+            }
+            catch (Exception ex)
+            {
+                sb.AppendLine($"Could not read device info: {ex.Message}");
+            }
+            return sb.ToString();
+        }
+
         private static string CleanEffectName(string? name)
         {
             if (string.IsNullOrEmpty(name)) return string.Empty;
